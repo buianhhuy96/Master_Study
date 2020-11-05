@@ -7,7 +7,7 @@ bar(myhist(I),'LineWidth',1), ylim([0 2500]);
 
 
 I2 = imread("man8.png");
-I3 = imread("mbaboon.bmp");
+I3 = imread("wom1.png");
 figure(2)
 subplot(2,3,1), imshow(I2), title('man8');
 subplot(2,3,2), imshow(ContrastStretch(I2)), title('constrast_stretched man8');
