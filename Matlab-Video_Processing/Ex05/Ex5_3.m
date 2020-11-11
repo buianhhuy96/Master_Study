@@ -3,6 +3,7 @@ close all;
 
 I = imread("miranda1.tif");
 noise = (2*rand(101)-1)*10;
+% add noise to image
 I(length(I)/2-50:length(I)/2+50,height(I)/2-50:height(I)/2+50) = ...
     uint8(double(I(length(I)/2-50:length(I)/2+50,height(I)/2-50:height(I)/2+50)) ...
         + noise);
@@ -64,3 +65,8 @@ function output_img=threshold_med_filter(img, filter_size, alpha)
     output_img = filtered_img(padding:length(added_pixel_img)-padding, ...
                     padding:height(added_pixel_img)-padding);
 end
+
+
+% Threshold filter keep original color/gray-level of the pixel when it detects the difference between median color/gray-level
+% and original one higher than alpha (an allowed threshold). Therefore, it can be used in image with strong color difference 
+% among image area or pixels.
