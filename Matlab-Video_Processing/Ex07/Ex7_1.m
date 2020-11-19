@@ -1,13 +1,16 @@
 clear all;
 close all;
 I = imread("lena.jpg");
+
 gaussian_noise_I = imnoise(I,'gaussian',0.03);
+
 salt_pepper_noise_I = imnoise(I,'salt & pepper',0.05);
+
 R_noise = sqrt(-2000*log((1-rand(size(I)))));
 Rayleigh_noise_I = (I) + uint8(R_noise);
 
 % Display images with 4 filters applied 
-figure('Name','directional_filtering 3x3')
+figure('Name','Images')
 subplot(2,2,1), imshow(I), title('Original');
 subplot(2,2,2), imshow(gaussian_noise_I), title('gaussian');
 subplot(2,2,3), imshow(salt_pepper_noise_I), title('salt & pepper');
@@ -49,9 +52,18 @@ function output_images=filters_test(img, filter_size)
     m = filter_size(1); n = filter_size(2);
     double_img = double(img);
     output_images = uint8([]);
-    
+    % Arithmetic Mean filter:
+    % Good at reducing noise in general. It leaves a little bit blurring
+    % effect in the edge. However, it perform well in different situation
     output_images(:,:,1) = uint8(imfilter(double_img,fspecial('average',[m n])));
+    % Geometric Mean filter:
+    % Good at reducing noise in general, though handling salt and pepper
+    % quite badly. It also preverse a little bit more details compared to
+    % Arithmetic mean filter
     output_images(:,:,2) = uint8(exp(imfilter(log(double_img),ones(m,n),'replicate')).^(1/(m*n)));
+    % Harmonic Mean filter:
+    % Good at reducing gaussian, Rayleigh noise, but its performance is
+    % quite poor with salt and pepper noise.
     output_images(:,:,3) = uint8((m*n) ./ imfilter(1 ./ ( double_img + eps), ones(m,n), 'replicate'));
 end
  
