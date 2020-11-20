@@ -105,7 +105,10 @@ def main():
         if cnt == plot_frame :
             # plot DFT spectrum (remember both in dB scale)
             # plot LPC spectrum
+            freq_axis = np.linspace(0,fs/2,nfft//2)
             plt.figure()
+            plt.plot(freq_axis,h[0:nfft//2])
+            plt.plot(freq_axis,FFT[0:nfft//2])
             
     
     formants = np.array(formants)
