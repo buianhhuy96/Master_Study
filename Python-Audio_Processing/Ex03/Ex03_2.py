@@ -17,12 +17,6 @@ def princarg(phase_in):
   return phase
   
 
-def speedx(sound_array, factor):
-    """ Multiplies the sound's speed by some `factor` """
-    indices = (np.round( np.arange(0, len(sound_array), factor) ))#.astype(int)
-    indices = indices[indices < len(sound_array)].astype(int)
-    return sound_array[ indices.astype(int) ]
-
 def delta_phi_(Phase_current, Phase_previous, winHopAn, wLen):
     """
     Function for calculating unwrapped phase difference between consecutive frames
@@ -39,19 +33,30 @@ def delta_phi_(Phase_current, Phase_previous, winHopAn, wLen):
     
     return delta_phi
     
+def pitch_shifting(audioIn, factor):
+    """ Multiplies the sound's speed by some `factor` """
+    # Get an index array that spread throughout audio array
+    # But with the number of sample divided/multiplied by a factor
+    indices = (np.round( np.arange(0, len(audioIn), factor) ))
+    # Limit the index in case exceeding length of audio
+    indices = indices[indices < len(audioIn)].astype(int)
+    return audioIn[ indices ]
 
 def main():
     # A Loop for overap add reconstruction  with no spectral processing in between    
     audioIn, fs=lb.load('audio.wav', sr=None)   # read audio
     
-    R=1.55
-    wLen = int(0.032*fs)                   # window length
-    audioOut = np.zeros(int(len(audioIn)*R))        # placeholder for reconstructed audio
+    R=1.4
+    winHopTime = 0.008
+    wLenTime = 0.032
+    
+    wLen = int(wLenTime*fs)                   # window length
+    audioOut = np.zeros(int(len(audioIn)*R))  # placeholder for reconstructed audio
     winAn = np.sqrt(hann(wLen, sym=False)) # analysis window
     winSyn =winAn
     
-    winHopAn = int(0.002*fs/2)             # Hop length or frame advance
-    winHopSyn = int(winHopAn*R)
+    winHopAn = int(winHopTime*fs)       # Hop length or frame advance for analysis window
+    winHopSyn = int(winHopAn*R)         # Hop Syn for shifting synthesis window
     inInd = 0
     outInd = 0
     prevPhi = 0
@@ -71,8 +76,6 @@ def main():
       # processing phase
       delta_phi = delta_phi_(phi0,prevPhi,winHopAn,wLen)
       newPhi = princarg(prevNewPhi + R*delta_phi)
-      
-      
       
       
       ####################
@@ -96,19 +99,35 @@ def main():
       prevPhi = phi0
       prevNewPhi = newPhi
       
-      # frame advance by winHopAn
+      # frame advanced by winHopAn
       inInd = inInd + winHopAn
+      # Output frame advanced by winHopSyn
       outInd = outInd + winHopSyn
+    
+    
     # Write sum signal to file
-    audioOut = speedx(audioOut,R/1.4)
-
     wavfile.write('AudioOut.wav', fs, audioOut) 
+    
+    timeIn = np.linspace(0,len(audioIn)/fs,len(audioIn))    
+    timeOut = np.linspace(0,len(audioOut)/fs,len(audioOut))
     plt.figure()
-    plt.plot(audioIn)
+    plt.title('Time stretched & no pitch shifted')
+    plt.plot(timeIn, audioIn, label = 'audioIn' )
+    plt.plot(timeOut, audioOut, label = 'audioOut' )
     
+    # Perform pitch shifting
+    audioOut = pitch_shifting(audioOut,R)
     
-   # plt.figure()
-    plt.plot(audioOut)
+    wavfile.write('AudioOutPitchShifted.wav', fs, audioOut) 
+    
+    timeIn = np.linspace(0,len(audioIn)/fs,len(audioIn))
+    timeOut = np.linspace(0,len(audioOut)/fs,len(audioOut))
+    plt.figure()
+    plt.title('Time stretched & pitch shifted')
+    plt.plot(timeIn, audioIn, label = 'audioIn' )
+    plt.plot(timeOut, audioOut, label = 'audioOut' )
+    plt.legend()
+    plt.show()
     
 if __name__== "__main__":
     main()

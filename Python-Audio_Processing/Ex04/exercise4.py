@@ -8,6 +8,7 @@ from scipy.signal import hamming, hann
 from matplotlib import pyplot as plt
 
 
+import math
 from audiolazy import lazy_lpc as lpc
 
 # interactive plotting
@@ -43,7 +44,7 @@ def main():
     audioIn, fs=lb.load('oboe59.wav', sr=None)   
     
     # filter order
-    p = 4                    # has to be tuned
+    p = 18                    # has to be tuned
     
     # number of DFT points
     nfft = 1024
@@ -55,10 +56,9 @@ def main():
     cnt = 0
     numframes = np.ceil( (len(audioIn)-wLen)/(wLen/2)) # number of franes 
     formants  = []                                     # A placeholder for storing formants
-    
+    angz =[]
     # choose a representative frame of the vowel
     plot_frame = int(numframes/2)  # middle of the vowel
-    
     # The analysis loop
     while inInd< len(audioIn)-wLen:
         # audio frame
@@ -66,23 +66,24 @@ def main():
         
         
         # compute LPC and gain 
-        coefficient = lpc.lpc.autocor(frame,wLen-2)
-     
+        coefficient = lpc.lpc.autocor(frame,p).numerator
+        gain = est_predictor_gain(frame,coefficient,p)
         
-        # Compute the filter tr ansfer function
-     
+        # Compute the filter transfer function
+        w, h = (scipy.signal.freqz(gain,coefficient))
         
         # Compute DFT spectrum
-        
+        FFT = fft(frame,nfft)
         
         # Compute roots
-           
+        root = np.roots(coefficient)
            
         #  LPC coefficients are real-valued, the roots occur in complex conjugate pairs. Retain only the roots with +ve sign for the imaginary part 
-        
+        root = root[root.imag >= 0]
         
         # compute formants from roots
         
+        angz = np.arctan2(root.imag,root.real)
     
         # convert to Hertz from angular frequencies
         angz = angz*(fs/(2*np.pi))
@@ -109,7 +110,7 @@ def main():
     
     formants = np.array(formants)
     
-    print('------ The computed formants are :', np.mean(formants, 0))
+    print('------ The computed formants are :', np.mean(formants,axis= 0))
     
     # Refine formant estimations (optional)
 

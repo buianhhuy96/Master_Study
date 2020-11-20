@@ -19,12 +19,12 @@ def main():
     plt.plot(time[50*int(Fs/100):51*int(Fs/100)],FM[50*int(Fs/100):51*int(Fs/100)])
     
       # Write sum signal to file
-    wavfile.write('Sine.wav', Fs, FM)
+    wavfile.write('FM.wav', Fs, FM)
     
     FFT = fft(FM)
     time = np.linspace(0,Fs,Fs);
     FFT_amp = 2/len(FFT)*abs(FFT)
     plt.figure()
-    plt.plot(time[int(0):int(Fs)],FFT_amp[int(0):int(Fs)])
+    plt.plot(time[int(0):int(Fs/2)],FFT_amp[int(0):int(Fs/2)])
 if __name__== "__main__":
     main()
