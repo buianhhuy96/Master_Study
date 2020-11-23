@@ -37,15 +37,7 @@ def reject_outliers(data, m=2):
     '''
     return data[abs(data - np.mean(data)) < m * np.std(data)]
     
-    
-
-def main(): 
-    # # read audio
-    audioIn, fs=lb.load('oboe59.wav', sr=None)   
-    
-    # filter order
-    p = 18                    # has to be tuned
-    
+def LPC_Formants(audioIn, fs, order, audioName):
     # number of DFT points
     nfft = 1024
     
@@ -62,15 +54,14 @@ def main():
     # The analysis loop
     while inInd< len(audioIn)-wLen:
         # audio frame
-        frame = audioIn[inInd:inInd+wLen]* win
-        
+        frame = audioIn[inInd:inInd+wLen]* win        
         
         # compute LPC and gain 
-        coefficient = lpc.lpc.autocor(frame,p).numerator
-        gain = est_predictor_gain(frame,coefficient,p)
+        coefficient = lpc.lpc.autocor(frame,order).numerator
+        gain = est_predictor_gain(frame,coefficient,order)
         
         # Compute the filter transfer function
-        w, h = (scipy.signal.freqz(gain,coefficient))
+        w, LPC = (scipy.signal.freqz(gain,coefficient))
         
         # Compute DFT spectrum
         FFT = fft(frame,nfft)
@@ -79,11 +70,11 @@ def main():
         root = np.roots(coefficient)
            
         #  LPC coefficients are real-valued, the roots occur in complex conjugate pairs. Retain only the roots with +ve sign for the imaginary part 
-        root = root[root.imag >= 0]
+        root = root[root.imag > 0]
         
         # compute formants from roots
         
-        angz = np.arctan2(root.imag,root.real)
+        angz = np.angle(root); #np.arctan2(root.imag,root.real)
     
         # convert to Hertz from angular frequencies
         angz = angz*(fs/(2*np.pi))
@@ -94,8 +85,9 @@ def main():
         # remove zero frequencies
         angz = angz[angz !=0]
         
+        
         # First three formants
-        formants.append(angz[:3]) 
+        if( angz.size != 0 and len(angz)>=3): formants.append(angz[:3]) 
         
         inInd = inInd + int(wLen/2) # frame advance
         
@@ -107,16 +99,47 @@ def main():
             # plot LPC spectrum
             freq_axis = np.linspace(0,fs/2,nfft//2)
             plt.figure()
-            plt.plot(freq_axis,h[0:nfft//2])
-            plt.plot(freq_axis,FFT[0:nfft//2])
+            plt.plot(freq_axis,10*np.log10(abs(FFT[0:nfft//2])**2), label = 'Signal')
+            plt.plot(freq_axis,10*np.log10(abs(LPC[0:nfft//2])**2), label = 'LPC Coefficients')
+            plt.title('Power spectrum (dB) of ' + audioName)
+            plt.ylabel('Magnitude (dB)')
+            plt.xlabel('Frequency (Hz)')
+            plt.legend()
             
     
     formants = np.array(formants)
+    # Plot formants of all signal 
     
-    print('------ The computed formants are :', np.mean(formants,axis= 0))
-    
+    plt.figure()
+    plt.title('Formants of ' + audioName)
+    plt.xlabel('Frame')
+    plt.ylabel('Frequency (Hz)')
+    print('\n------ The computed formants of ' +audioName+' are :')
+    for i in range(0,3):    
+        inRangeFormants = np.array([])
+        inRangeFormants = reject_outliers(formants[:, [i]])
+        plt.plot(inRangeFormants)
+        print(np.mean(inRangeFormants))
     # Refine formant estimations (optional)
+    
+    
 
+
+def main(): 
+    
+    # filter order
+    p = 8                      # has to be tuned
+    
+    # # read audio
+    audioIni, fsi       =lb.load('i.wav', sr=None)
+    audioIno, fso       =lb.load('o.wav', sr=None) 
+    audioIne, fse       =lb.load('e.wav', sr=None) 
+    audioInOboe, fsOboe =lb.load('oboe59.wav', sr=None) 
+    
+    LPC_Formants(audioIni    ,fsi   ,p,'i.wav')
+    LPC_Formants(audioIno    ,fso   ,p,'o.wav')
+    LPC_Formants(audioIne    ,fse   ,p,'e.wav') 
+    LPC_Formants(audioInOboe ,fsOboe,p,'oboe59.wav')
 
 
 if __name__== "__main__":
