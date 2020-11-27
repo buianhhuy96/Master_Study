@@ -6,7 +6,7 @@ I = (imread("lake.jpg"));
 % Convert to HSV and get Saturation Component
 I_HSV = rgb2hsv(I);
 Is = I_HSV(:,:,2);
-% Filter image component with Threshold Median Filter
+% Filter image component with Weighted Median Filter
 weight = ones(5);
 weight(3,3) = 5;
 Is = (med_filter(Is,weight));
