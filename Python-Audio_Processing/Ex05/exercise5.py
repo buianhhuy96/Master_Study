@@ -5,44 +5,17 @@ from scipy.fftpack import dct
 from numpy.fft import fft, ifft, fftshift
 import librosa as lb
 import librosa.display
-from scipy.signal import hamming, hann
+from scipy.signal import *
 from matplotlib import pyplot as plt
-import cv2
 
 import math
-from audiolazy import lazy_lpc as lpc
-
-# interactive plotting
-plt.ion()
 
 
-
-def est_predictor_gain(x, a, p):
-    '''
-    A function to compute gain of the residual signal in LP analyis.
-    x:  signal 
-    a: LPC coefficients
-    p: order of the filter
-    '''
-    cor = np.correlate(x, x, mode='full')
     
-    rr = cor[len(cor)//2: len(cor)//2+p+1]
-    g = np.sqrt(np.sum(a*rr))
-    return g
-
-   
-    
-def reject_outliers(data, m=2):
-    '''
-    Function to reject outliers. All values beyond m standard deviations from means are excluded
-    '''
-    return data[abs(data - np.mean(data)) < m * np.std(data)]
-    
-def myMfcc(audioIn, fs, order, melFilter):
-    wLenTime = 0.1
-    n_fft = 512
-    wLen = int(wLenTime*fs)                   # window length
-    winAn = hamming(wLen, sym=False) # analysis window
+def myMfcc(audioIn, fs, order, melFilter, n_fft):
+    wLen = n_fft                  # window length
+    wHopLen = int(wLen//4)
+    winAn = scipy.signal.hamming(wLen, sym=False) # analysis window
     
     inInd = 0
     melSpectrum = []
@@ -63,8 +36,8 @@ def myMfcc(audioIn, fs, order, melFilter):
       framePSpectrum  = np.power((np.abs(f[:n_fft//2+1])),2)
       frameMelSpectrum = np.matmul(melFilter, framePSpectrum)
       
-      frameLogPSpectrum  = 20*np.log10(framePSpectrum)
-      frameLogMelSpectrum = 20*np.log10(frameMelSpectrum)
+      frameLogPSpectrum  = np.log10(framePSpectrum)
+      frameLogMelSpectrum = np.log10(frameMelSpectrum)
       
       frameDCT = dct(frameLogMelSpectrum)
       
@@ -92,7 +65,7 @@ def myMfcc(audioIn, fs, order, melFilter):
       
       
       # frame advanced by winHopAn
-      inInd = inInd + wLen
+      inInd = inInd + wHopLen
       
       
 
@@ -104,24 +77,24 @@ def myMfcc(audioIn, fs, order, melFilter):
     Ex5c[0].title.set_text('Power Spectrum (dB)')    
     Ex5c[0].set_xlabel('Frequency (Hz)')
     Ex5c[0].set_ylabel('Magnitude (dB)')
-    Ex5c[0].imshow(logPowerSpectrum)
+    Ex5c[0].imshow(np.transpose(logPowerSpectrum), aspect='auto')
     
     Ex5c[1].title.set_text('Mel Spectrum')    
     Ex5c[1].set_xlabel('Frequency (Hz)')
     Ex5c[1].set_ylabel('Magnitude')
-    Ex5c[1].plot(freq_axis ,melSpectrum)
+    Ex5c[1].imshow(np.transpose(melSpectrum), aspect='auto')
     
     Ex5c[2].title.set_text('Mel Spectrum (dB)')    
     Ex5c[2].set_xlabel('Frequency (Hz)')
     Ex5c[2].set_ylabel('Magnitude (dB)')
-    Ex5c[2].plot(freq_axis, logMelSpectrum)
+    Ex5c[2].imshow(np.transpose(logMelSpectrum), aspect='auto')
     return np.swapaxes(DCT,1,0)
     
     # plt.figure()
     # plt.title('DCT of ' + audioName)
     # plt.xlabel('Frame')
     # plt.ylabel('Frequency (Hz)')
-    
+
     
 
 
@@ -147,12 +120,23 @@ def main():
             Pre_emphasis.append(audioIn[i] - alpha*audioIn[i-1])
             
     
-    mfcc = myMfcc(audioIn, fs, Pre_emphasis, melFilterBank)
-    librosa_mfcc = librosa.feature.mfcc(y=audioIn, sr = fs, n_mfcc = 40,hop_length=int(0.1*fs) )
-    fig,MFCC =  plt.subplots(2,1)
-    MFCC[0].imshow(librosa_mfcc,aspect = 'auto')
-    MFCC[1].imshow(mfcc,aspect = 'auto')
-            
+    mfcc = myMfcc(audioIn, fs, Pre_emphasis, melFilterBank,nfft)
+    librosa_mfcc = librosa.feature.mfcc(y=audioIn, sr = fs, n_mfcc = 40,hop_length=nfft )
+    fig, ax = plt.subplots()
+    img = librosa.display.specshow(librosa_mfcc, x_axis='time', ax=ax)
+    fig.colorbar(img, ax=ax)
+    ax.set(title='Librosa MFCC')
+
+    fig, ax = plt.subplots()
+    img = librosa.display.specshow(mfcc, x_axis='time', ax=ax)
+    fig.colorbar(img, ax=ax)
+    ax.set(title='my MFCC')
+    #fig,MFCC =  plt.subplots(2,1)
+    #fig.colorbar(img, ax=MFCC[0])
+    #MFCC[0].set(title='MFCC')
+    #MFCC[0].imshow(librosa_mfcc,aspect = 'auto')
+    #MFCC[1].imshow(mfcc,aspect = 'auto')
+    plt.show()
 if __name__== "__main__":
     main()
 
