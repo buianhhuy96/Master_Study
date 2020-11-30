@@ -38,7 +38,7 @@ figure('Name', "all-noisy-channel image");
 imshow((Ic)),title('all-noisy-channel image');
 
 figure('Name', "d");
-% Apply filter in R,G,B looks quite similar because 
+
 subplot(2,3,1), imshow(rId),title('red');
 subplot(2,3,2), imshow(gId),title('green');
 subplot(2,3,3), imshow(bId),title('blue');
