@@ -7,7 +7,7 @@ import librosa as lb
 import librosa.display
 from scipy.signal import hamming, hann
 from matplotlib import pyplot as plt
-
+import cv2
 
 import math
 from audiolazy import lazy_lpc as lpc
@@ -38,21 +38,18 @@ def reject_outliers(data, m=2):
     '''
     return data[abs(data - np.mean(data)) < m * np.std(data)]
     
-def LPC_Formants(audioIn, fs, order, audioName,melFilter):
-    winHopTime = 0.008
-    wLenTime = 0.032
+def myMfcc(audioIn, fs, order, melFilter):
+    wLenTime = 0.1
     n_fft = 512
     wLen = int(wLenTime*fs)                   # window length
     winAn = hamming(wLen, sym=False) # analysis window
     
-    
-    winHopAn = int(winHopTime*fs)       # Hop length or frame advance for analysis window
-    #winHopSyn = int(winHopAn*R)         # Hop Syn for shifting synthesis window
     inInd = 0
-    outInd = 0
     melSpectrum = []
-    logMelSpectrum = []
+    
     powerSpectrum = []
+    logMelSpectrum = []
+    logPowerSpectrum = []
     DCT = []
     while inInd< (len(order)-wLen)+1:
     
@@ -62,9 +59,11 @@ def LPC_Formants(audioIn, fs, order, audioName,melFilter):
       # compute DFT
       f = fft(frame,n_fft)
       
-      # save magnitudes and phases
+      # calculate magnitudes and power spectrum with Mel filter
       framePSpectrum  = np.power((np.abs(f[:n_fft//2+1])),2)
       frameMelSpectrum = np.matmul(melFilter, framePSpectrum)
+      
+      frameLogPSpectrum  = 20*np.log10(framePSpectrum)
       frameLogMelSpectrum = 20*np.log10(frameMelSpectrum)
       
       frameDCT = dct(frameLogMelSpectrum)
@@ -73,11 +72,13 @@ def LPC_Formants(audioIn, fs, order, audioName,melFilter):
       ####################
       # processing in spectral domain 
       #######################
+       
+      powerSpectrum.append(framePSpectrum)
+      melSpectrum.append(frameMelSpectrum)    
       
-      melSpectrum.append(frameMelSpectrum)
+      logPowerSpectrum.append(frameLogPSpectrum)
       logMelSpectrum.append(frameLogMelSpectrum)
       DCT.append(frameDCT)
-      powerSpectrum.append(framePSpectrum)
       
       # Recover the complex FFT back
       #ft = (abs(f)* np.exp(1j*phi0))  
@@ -92,23 +93,30 @@ def LPC_Formants(audioIn, fs, order, audioName,melFilter):
       
       # frame advanced by winHopAn
       inInd = inInd + wLen
-      # Output frame advanced by winHopSyn
-      outInd = outInd + wLen
       
       
 
    
    
-    a = librosa.feature.mfcc(y=audioIn, sr = fs, n_mfcc = 40,hop_length=wLen )
-    plt.figure()
-    plt.title('DCT of ')
-    plt.plot(melSpectrum)
-    plt.xlabel('Frame')
-    plt.ylabel('Frequency (Hz)')
+    freq_axis = np.linspace(0,fs/2,n_fft//2+1)
     
-    fig,Ex5 =  plt.subplots(2,1)
-    Ex5[0].imshow(a,aspect = 'auto')
-    Ex5[1].imshow(np.swapaxes(DCT,1,0),aspect = 'auto')
+    fig,Ex5c =  plt.subplots(3,1)
+    Ex5c[0].title.set_text('Power Spectrum (dB)')    
+    Ex5c[0].set_xlabel('Frequency (Hz)')
+    Ex5c[0].set_ylabel('Magnitude (dB)')
+    Ex5c[0].imshow(logPowerSpectrum)
+    
+    Ex5c[1].title.set_text('Mel Spectrum')    
+    Ex5c[1].set_xlabel('Frequency (Hz)')
+    Ex5c[1].set_ylabel('Magnitude')
+    Ex5c[1].plot(freq_axis ,melSpectrum)
+    
+    Ex5c[2].title.set_text('Mel Spectrum (dB)')    
+    Ex5c[2].set_xlabel('Frequency (Hz)')
+    Ex5c[2].set_ylabel('Magnitude (dB)')
+    Ex5c[2].plot(freq_axis, logMelSpectrum)
+    return np.swapaxes(DCT,1,0)
+    
     # plt.figure()
     # plt.title('DCT of ' + audioName)
     # plt.xlabel('Frame')
@@ -119,14 +127,12 @@ def LPC_Formants(audioIn, fs, order, audioName,melFilter):
 
 def main(): 
     
-    # filter order
-    p = 8                      # has to be tuned
-    alpha = 0.97
-    ############################### Answer 1 ##################################
-    # # read audio
-    audioIn, fs       =lb.load('audio.wav', sr=None)
+    alpha = 0.97    
     nfft = 512
     nmel = 40
+    ############################### Answer 1 ##################################
+    # # read audio
+    audioIn, fs   = lb.load('audio.wav', sr=None)
     melFilterBank = lb.filters.mel(fs,nfft,nmel)
     plt.figure()
     plt.title("Mel Filter Bank")
@@ -141,8 +147,11 @@ def main():
             Pre_emphasis.append(audioIn[i] - alpha*audioIn[i-1])
             
     
-    LPC_Formants(audioIn    ,fs   ,Pre_emphasis,'i.wav',melFilterBank)
-    
+    mfcc = myMfcc(audioIn, fs, Pre_emphasis, melFilterBank)
+    librosa_mfcc = librosa.feature.mfcc(y=audioIn, sr = fs, n_mfcc = 40,hop_length=int(0.1*fs) )
+    fig,MFCC =  plt.subplots(2,1)
+    MFCC[0].imshow(librosa_mfcc,aspect = 'auto')
+    MFCC[1].imshow(mfcc,aspect = 'auto')
             
 if __name__== "__main__":
     main()
