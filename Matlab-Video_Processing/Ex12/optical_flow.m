@@ -1,7 +1,7 @@
 % Constructs a multimedia reader object
 vidReader = VideoReader('visiontraffic.avi');
 % Initialize the optical flow object
-opticFlow = opticalFlowLK('NoiseThreshold', eps);
+opticFlow = opticalFlowLK('NoiseThreshold', 0.005);
 while hasFrame(vidReader)
     % Read the rgb frame
     frameRGB  = readFrame(vidReader);
