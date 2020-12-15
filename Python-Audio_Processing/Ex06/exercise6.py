@@ -6,93 +6,98 @@ from matplotlib import pyplot as plt
 import sounddevice
 from librosa.feature.spectral import melspectrogram
 # interactive plotting
-plt.ion()
 
+
+    ############################### Bonus ##################################
+# My own implementation of onset_strength function
 def myOnset_Strength(audioIn, fs):
+    # Calculate stft
     fft = (librosa.core.stft(audioIn))
-    fft = melspectrogram(audioIn, fs)
+        
+    # Convert to dB scale
     fftLog = librosa.amplitude_to_db((fft), ref=np.max)
-    logCompression = np.transpose(np.log10(1+2*np.abs(fftLog)))
+    logCompression = np.transpose(np.log10(1+5*np.abs(fftLog)))
     spectralNovelty = np.sum(np.diff(logCompression),axis=1)
     return spectralNovelty
 
+
+
 def detectOnset(audioIn, fs, audioName):
+    # Calculating onset and picking peaks based on calculated result
     onsetStrength = librosa.onset.onset_strength(audioIn,sr = fs)
-    myOnsetStrength = myOnset_Strength(audioIn, fs)
-    peaks = librosa.util.peak_pick(onsetStrength,1, 1, 1, 1, 1, 20)
+    peaks = librosa.util.peak_pick(onsetStrength,3, 3, 1, 1, 0.5, 10)
     timeIndex = lb.frames_to_time(np.arange(len(onsetStrength)),sr=fs)
+    
+    # Calculating onset and picking peaks based on calculated result
+    # Using own implementation
+    myOnsetStrength = myOnset_Strength(audioIn, fs)
+    
+    # Multiply by 80 to increase amplitude for easier to choose delta parameter
+    myPeaks = librosa.util.peak_pick(myOnsetStrength*80,3, 3, 1, 1,1, 10)
     mytimeIndex = lb.frames_to_time(np.arange(len(myOnsetStrength)),sr=fs)
     
-    
-    fig,Ex5c =  plt.subplots(3,1)
-    Ex5c[0].title.set_text(audioName + ' Onset strength with peaks')
-    Ex5c[0].plot(timeIndex, onsetStrength, alpha=0.8, label='Onset strength')
-    Ex5c[0].vlines(timeIndex[peaks], 0, onsetStrength.max(), color='r', alpha=0.8,label='Selected peaks')
-
-
-    Ex5c[1].title.set_text(audioName + ' My onset strength with peaks')
-    Ex5c[1].plot(mytimeIndex, myOnsetStrength, alpha=0.8, label='Onset strength')
-    Ex5c[1].vlines(mytimeIndex[peaks], 0, myOnsetStrength.max(), color='r', alpha=0.8,label='Selected peaks')
-    
-    D = librosa.stft(audioIn)
-    Ex5c[2].title.set_text('Constant Q Spectrtrogram')
-    Ex5c[2].set_ylabel('Frequency (Hz)')
-   
-    librosa.display.specshow(librosa.amplitude_to_db(D, ref=np.max), y_axis='log', x_axis='time', ax = Ex5c[2])
-    
-    
-    audio_click = lb.clicks(frames=peaks, sr=fs,length=len(audioIn), click_freq=100)
+    audio_click = lb.clicks(frames=peaks, sr=fs,length=len(audioIn), click_freq=500)
     sounddevice.play((audioIn+audio_click*1.5), samplerate=fs)
 
     
+    # Plot the spectrogram and picked peaks
+    fig,window2 =  plt.subplots(3,1)
+    window2[0].title.set_text(audioName + ' Onset strength with peaks')
+    window2[0].plot(timeIndex, onsetStrength, alpha=0.8, label='Onset strength')
+    window2[0].vlines(timeIndex[peaks], 0, onsetStrength.max(), color='r', alpha=0.8)    
+    
+
+    window2[1].title.set_text(audioName + ' My onset strength with peaks')
+    window2[1].plot(mytimeIndex, myOnsetStrength, alpha=0.8, label='Onset strength')
+    window2[1].vlines(mytimeIndex[myPeaks], 0, myOnsetStrength.max(), color='r', alpha=0.8)
+    
+    
+    D = librosa.stft(audioIn)
+    window2[2].title.set_text('Constant Q Spectrtrogram')
+    window2[2].set_ylabel('Frequency (Hz)')   
+    librosa.display.specshow(librosa.amplitude_to_db(D, ref=np.max), y_axis='log', x_axis='time', ax = window2[2])
+    
+    
 def compareSpectrogram(audioIn, fs, audioName):
+    # Calculate 3 spectrograms
     spectrogram = lb.amplitude_to_db(lb.core.stft(audioIn),np.max)
     constantQSpectrogram = lb.amplitude_to_db(lb.core.cqt(audioIn, sr = fs),np.max)
     chormagram = lb.amplitude_to_db(lb.feature.chroma_cqt(audioIn, sr = fs),np.max)
     
+    # plotting
+    fig,window1 =  plt.subplots(3,1)
+    window1[0].title.set_text(audioName + ' Spectrogram (dB)')
+    window1[0].set_ylabel('Frequency (Hz)')
     
-    fig,Ex5c =  plt.subplots(3,1)
-    Ex5c[0].title.set_text(audioName + ' Spectrogram (dB)')
-    Ex5c[0].set_ylabel('Frequency (Hz)')
+    librosa.display.specshow(spectrogram, sr =fs, y_axis='log' , ax=window1[0])
     
-    librosa.display.specshow(spectrogram, sr =fs, y_axis='log' , ax=Ex5c[0])
-    #Ex5c[0].imshow(np.transpose(logPowerSpectrum),
-    #               extent=[0,len(audioIn)/fs,0,fs/2],aspect='auto')
-    
-    Ex5c[1].title.set_text('Constant Q Spectrtrogram')    
-    Ex5c[1].set_ylabel('Frequency (Hz)')
+    window1[1].title.set_text('Constant Q Spectrtrogram')    
+    window1[1].set_ylabel('Frequency (Hz)')
    
-    librosa.display.specshow(constantQSpectrogram,  sr =fs, y_axis='log',  ax=Ex5c[1])
+    librosa.display.specshow(constantQSpectrogram,  sr =fs, y_axis='log',  ax=window1[1])
     
-    Ex5c[2].title.set_text('Chromagram')    
-    Ex5c[2].set_xlabel('Time(s)')
-    Ex5c[2].set_ylabel('Frequency (Hz)')
-    librosa.display.specshow(chormagram,  sr =fs, y_axis='log', x_axis='time', ax=Ex5c[2])
-    #return np.transpose(MFCC)
-    
+    window1[2].title.set_text('Chromagram')    
+    window1[2].set_xlabel('Time(s)')
+    window1[2].set_ylabel('Frequency (Hz)')
+    librosa.display.specshow(chormagram,  sr =fs, y_axis='log', x_axis='time', ax=window1[2])
     
     
 
 
 def main(): 
     
-    alpha = 0.97    
-    nfft = 512
-    nmel = 40
     ############################### Answer 1 ##################################
     # # read audio
     audioIn, fs = lb.load('brahms_hungarian_dance_5_short.wav', sr=None)
   
-    # Calculate MFCC in 2 different ways
-    #compareSpectrogram(audioIn, fs, "brahms_hungarian")
+    # Calculate and plot 3 types of spectrogram
+    compareSpectrogram(audioIn, fs, "brahms_hungarian_dance_5_short")
     
     
-    
-    audioIn2, fs2   = lb.load('classic_rock_beat.wav', sr=None)
-    #librosa_mfcc = librosa.fea0ture.mfcc(y=audioIn, sr = fs,hop_length=nfft//4, n_mfcc = 40)
-    #sounddevice.play(audioIn2, samplerate=fs2)
-    detectOnset(audioIn2,fs2,"classic_rock")
-            
+    ############################### Answer 2 ##################################   
+    audioIn2, fs2   = lb.load('conga_groove.wav', sr=None)
+    detectOnset(audioIn2,fs2,"conga_groove")
+    plt.show()
 if __name__== "__main__":
     main()
 
