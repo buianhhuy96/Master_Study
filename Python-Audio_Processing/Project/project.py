@@ -82,7 +82,8 @@ def main():
             # This will be used in Cosine Similarity
             mean = np.mean(mfcc, axis = 1)
             std = np.std(mfcc, axis = 1)
-            audio_features = np.column_stack([audio_features,np.hstack([mean,std])]) if audio_features.size else np.hstack([mean,std])
+            audio_features = np.column_stack([audio_features,np.hstack([mean,std])])\
+                            if audio_features.size else np.hstack([mean,std])
             
     # Choose between 2 methods to compare audio files
     # Uncomment one and comment the other so as to choose the method.
@@ -112,7 +113,7 @@ def main():
     
     # Save output to reports
     wb.save('Heatmap.xls') 
-    fig.savefig('Heatmap_All.jpg',
+    fig.savefig('Heatmap.jpg',
             format='jpeg',
             dpi=500,
             bbox_inches='tight')
