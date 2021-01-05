@@ -1,0 +1,31 @@
+﻿Build started 10/23/2017 2:19:25 PM.
+     1>Project "D:\Temp App\Chessboard\Sample1\Sample1\Sample1.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /IC:\opencv\build\include /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt Source.cpp
+         Source.cpp
+     1>Source.cpp(77): warning C4101: 'e' : unreferenced local variable
+     1>Source.cpp(106): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+     1>Source.cpp(137): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(139): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(193): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Source.cpp(194): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Source.cpp(215): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Source.cpp(216): warning C4244: '=' : conversion from 'float' to 'int', possible loss of data
+     1>Source.cpp(219): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(221): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(233): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(235): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(251): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(252): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+     1>Source.cpp(277): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>Source.cpp(327): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+     1>Source.cpp(328): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\Temp App\Chessboard\Sample1\x64\Debug\Sample1.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\OpenCv\sources\3rdparty\ffmpeg /LIBPATH:C:\opencv\build\x64\vc12\lib opencv_ts300.lib opencv_world300d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\Temp App\Chessboard\Sample1\x64\Debug\Sample1.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\Temp App\Chessboard\Sample1\x64\Debug\Sample1.lib" /MACHINE:X64 x64\Debug\stdafx.obj
+         x64\Debug\Source.obj
+         Sample1.vcxproj -> D:\Temp App\Chessboard\Sample1\x64\Debug\Sample1.exe
+     1>Done Building Project "D:\Temp App\Chessboard\Sample1\Sample1\Sample1.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.40
