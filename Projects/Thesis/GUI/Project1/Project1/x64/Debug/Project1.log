@@ -1,0 +1,32 @@
+﻿  MyForm.cpp
+d:\lvtn\giao diện\project1\project1\MyForm.h(381): warning C4101: 'e': unreferenced local variable
+d:\lvtn\giao diện\project1\project1\MyForm.h(393): warning C4101: 'e': unreferenced local variable
+d:\lvtn\giao diện\project1\project1\MyForm.h(509): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+d:\lvtn\giao diện\project1\project1\MyForm.h(461): warning C4101: 'exception': unreferenced local variable
+d:\lvtn\giao diện\project1\project1\MyForm.h(481): warning C4101: 'exception': unreferenced local variable
+d:\lvtn\giao diện\project1\project1\MyForm.h(501): warning C4101: 'exception': unreferenced local variable
+MyForm.cpp(51): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+MyForm.cpp(101): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+MyForm.cpp(49): warning C4102: 'std': unreferenced label
+MyForm.cpp(38): warning C4101: 'Setpointt': unreferenced local variable
+c:\opencv\build\include\opencv2\core\cvstd.hpp(575): warning C4793: 'cv::String::String': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\mat.inl.hpp(482): warning C4793: 'cv::Mat::Mat': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\fast_math.hpp(193): warning C4793: '`anonymous namespace'::cvRound': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\fast_math.hpp(194): warning C4793: '`anonymous namespace'::cvRound': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\mat.inl.hpp(803): warning C4793: 'cv::Mat::release': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\mat.inl.hpp(2083): warning C4793: 'cv::SparseMat::addref': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\mat.inl.hpp(3683): warning C4793: 'cv::UMat::addref': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\ptr.inl.hpp(67): warning C4793: 'cv::detail::PtrOwner::incRef': function compiled as native:
+  	Found an intrinsic not supported in managed code
+c:\opencv\build\include\opencv2\core\ptr.inl.hpp(72): warning C4793: 'cv::detail::PtrOwner::decRef': function compiled as native:
+  	Found an intrinsic not supported in managed code
+  AssemblyInfo.obj : /DEBUG:FASTLINK is not supported when managed code is present; restarting link with /DEBUG:FULL
+  Project1.vcxproj -> D:\LVTN\Giao diện\Project1\x64\Debug\Project1.exe
+  Project1.vcxproj -> D:\LVTN\Giao diện\Project1\x64\Debug\Project1.pdb (Partial PDB)

@@ -1,0 +1,19 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Project:</h2>
+D:\LVTN\DC Servo HMC5883 all test HAL LL\MDK-ARM\DC Servo HMC5883 all test HAL LL.uvproj
+Project File Date:  06/04/2018
+
+<h2>Output:</h2>
+Build target 'DC Servo HMC5883 all test HAL LL'
+compiling main.c...
+linking...
+Program Size: Code=31040 RO-data=976 RW-data=332 ZI-data=2420  
+"DC Servo HMC5883 all test HAL LL\DC Servo HMC5883 all test HAL LL.axf" - 0 Errors, 0 Warning(s).
+Load "DC Servo HMC5883 all test HAL LL\\DC Servo HMC5883 all test HAL LL.axf" 
+Erase Done.
+Programming Done.
+Verify OK.
+Application running ...

@@ -1,3 +1,22 @@
+/****************** Realtime video captures of XO game  ***********************
+Project: Realtime video captures of XO game
+Author: Anh Huy Bui - 1411408
+University: Bach Khoa Ho Chi Minh
+Date: October - 2017
+Description: 
+- Input: Camera, X-O game on paper.
+- Output: Realtime version of X-O game drawn on computer.
++ This project uses camera to record 2 persons playing X-O game on paper, analyzes 
+and redraw an digital version of the game simuntanceouly. 
++ Camera connects to PC wirely or wirelessly via an IP address.
++ OpenCV library is used to 
+-> read video frame 
+-> detect game board borders/edges and corners
+-> reconstruct the frame with mapped board corners so that it can be shaped as a rectangle
+-> count number of squares inside game board
+-> detect X-O inside each square using an already-made mask of X and O
+******************************************************************************/
+
 #include "stdafx.h"
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -307,7 +326,7 @@ int findXO(Mat img)
 	{
 		int check = 0;
 		
-		Mat modelx = imread("xmask1.jpg", CV_8UC1);
+		Mat modelx = imread("xmask.jpg", CV_8UC1);
 		Mat modelo = imread("omask.jpg", CV_8UC1);
 		resize(modelx, modelx, Size(img.cols, img.rows), 1, 1, INTER_LINEAR);
 		resize(modelo, modelo, Size(img.cols, img.rows), 1, 1, INTER_LINEAR);
