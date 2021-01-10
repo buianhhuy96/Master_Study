@@ -28,14 +28,14 @@ void xyspeed(void)
 	
 }
 
-void DRlocate(void)
+void locateDeadReckoning(void)
 {
 	//float *newPosition= (float *) calloc(3,sizeof(float));
-	current_location[0] = current_location[0]+ (float) T*(speed[0]+speed_old[0])/2;
-	current_location[1] = current_location[1]+ (float) T*(speed[1]+speed_old[1])/2;
+	current_location[0] = current_location[0]+ (float) T*(speed[0]+prev_speed[0])/2;
+	current_location[1] = current_location[1]+ (float) T*(speed[1]+prev_speed[1])/2;
 	if (!compass_activation_flag)
 	{
-		current_location[2] = current_location[2]+ (float) T*(speed[2]+speed_old[2])/2;
+		current_location[2] = current_location[2]+ (float) T*(speed[2]+prev_speed[2])/2;
 			if (current_location[2] < 0) current_location[2] = current_location[2] + 2*PI;
 			if (current_location[2] > 2*PI) current_location[2] = current_location[2] - 2*PI;
 	}
@@ -44,9 +44,9 @@ void DRlocate(void)
 void xyspeed_inv(void)
 {
 	float* vehicle_speed = (float *) calloc(3,sizeof(float));
-	vehicle_speed[0] = speed_set[0]*cos(current_location[2]) + speed_set[1]*sin(current_location[2]);
-	vehicle_speed[1] = (-1)*speed_set[0]*sin(current_location[2]) + speed_set[1]*cos(current_location[2]);
-	vehicle_speed[2] = speed_set[2];
+	vehicle_speed[0] = speed_setpoint[0]*cos(current_location[2]) + speed_setpoint[1]*sin(current_location[2]);
+	vehicle_speed[1] = (-1)*speed_setpoint[0]*sin(current_location[2]) + speed_setpoint[1]*cos(current_location[2]);
+	vehicle_speed[2] = speed_setpoint[2];
 		float k=cos(PI/4);
 	v1_set = k*(vehicle_speed[0]+vehicle_speed[1]) + D*vehicle_speed[2];
 	v2_set = k*((-1)*vehicle_speed[0]+vehicle_speed[1]) + D*vehicle_speed[2];

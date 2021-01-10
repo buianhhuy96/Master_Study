@@ -66,7 +66,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM6_Init(void);
 
-void Message_Create(float* val);
+void createMessage(float* val);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Start_wheel(uint16_t NUM, float SPEED);                               
 void DISABLE_ALL_IT(void);
@@ -87,14 +87,14 @@ float pos_receive_2[4][3]=
 	{0,1,0}
 };
 
-///////////
-uint8_t data[15];
+// Data transmiting 
+uint8_t full_message[15];
 uint8_t connected[]="!";
 uint8_t Rx_indx, Rx_data, Rx_Buffer[100], data_receiving_complete,Connected;
 
 int Mess_wait=0;
-//////////////
 
+// Kalman Filter
 float p[5];
 float _err_measure;
 float _q;
@@ -106,7 +106,7 @@ float _qX;
 float _current_estimateX;
 float _kalman_gainX;
  
-///////
+// Vehicle parameters
 float v1_scaled;
 float v2_scaled;
 float v3_scaled;
@@ -120,30 +120,30 @@ float FirstCall_theta=10;
 
 float S1[3];
 float S2[3];
-float S2_old[3];
-/////////
+float prev_S2[3];
+
+// PWM for 4 wheels
 float duty_cycle_wheel_1;
 float duty_cycle_wheel_2;
 float duty_cycle_wheel_3;
 float duty_cycle_wheel_4;
 
-/////////////////
+// Positioning and Navigation
 float speed[3] = {0,0,0};
-float speed_old[3] = {0,0,0};
+float prev_speed[3] = {0,0,0};
 float current_location[3] = {0,0,0};
 float prev_location[3] = {0,0,0};
-float pos_oldt[3] = {0,0,0};
+float prev_location_theta[3] = {0,0,0};
 float received_destination[3]={0,0,0};
 float destination_setpoint[3]={0,0,0};
 float prev_destination_setpoint[3];
 float diff_destination_setpoint[3];
 float motor_torque[4];
-float pos_e[3];
 float u[3];
 float q2[3]={0,0,0};
-float speed_set[3]= {0,0,0};
-float speed_set_old[3]= {0,0,0};
-////////////
+float speed_setpoint[3]= {0,0,0};
+
+//////////// PID
 float error[4];
 float pre_error[4];
 float I[4];
@@ -153,13 +153,13 @@ float PWM_ON_2=0;
 float PWM_ON_3=0;
 float PWM_ON_4=0; 
 
-////////////
+// Dynamic Control Surface
 float x2_set[3];
 float x2n_set[3];
 float dx2_set[3];
 
-//Timer 3 Chan_1 PA6
-//Timer 3 Chan_2 PA7
+//Timer 3 pin PA6
+//Timer 3 pin PA7
 int32_t en_1_A=0;
 int32_t en_1_A_temp=0;
 uint16_t state_1=0;
@@ -171,8 +171,8 @@ uint16_t OvFl_1=0;
 uint16_t FirstCall_1 = 1;
 float v1=0;
 float v1_set=0;
-//Timer 2 Chan_3 PA2
-//Timer 2 Chan_4 PA3
+//Timer 2 pin PA2
+//Timer 2 pin PA3
 int32_t en_2_A=0;
 int32_t en_2_A_temp=0;
 uint16_t state_2=0;
@@ -184,8 +184,8 @@ uint16_t OvFl_2=0;
 uint16_t FirstCall_2 = 1;
 float v2=0;
 float v2_set=0;
-//Timer 5 Chan_1 PA0
-//Timer 5 Chan_2 PA1
+//Timer 5 pin PA0
+//Timer 5 pin PA1
 int32_t en_3_A=0;
 int32_t en_3_A_temp=0;
 uint16_t state_3=0;
@@ -198,8 +198,8 @@ uint16_t FirstCall_3 = 1;
 float v3=0;
 float v3_set=0;
 
-//Timer 4 Chan_2 PD13
-//Timer 4 Chan_3 PD14
+//Timer 4 pin PD13
+//Timer 4 pin PD14
 int32_t en_4_A=0;
 int32_t en_4_A_temp=0;
 uint16_t state_4=0;
@@ -227,10 +227,9 @@ int main(void)
 	
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
-	
-	
+
 	SystemClock_Config();
-	
+	// Initializes timer for program flow and GPIO for controlling
 	MX_GPIO_Init();
 	MX_I2C1_Init();
 	MX_TIM2_Init();
@@ -241,7 +240,6 @@ int main(void)
 	MX_TIM8_Init();
 	MX_TIM6_Init();
 	//Encoder Input Capture init
-	//LL_T
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2,TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim3,TIM_CHANNEL_1);
@@ -274,21 +272,9 @@ int main(void)
 	HAL_UART_Receive_IT(&huart3, &Rx_data, 1);
 	DISABLE_ALL_IT();
 
-  while (1)
-  {	
-		if (Mode == 1)
-		{
-			received_destination[0] = pos_receive_2[q][0];
-			received_destination[1] = pos_receive_2[q][1];
-			received_destination[2] = pos_receive_2[q][2];
-			if ((x_reached == 1) && (y_reached == 1) && (t == 600))
-			{
-				if(q==3) q = 0;
-				else q++;
-				t = 0;
-			}
-				
-		}
+	while (1)
+	{	
+		// This loop is only for testing purposes
 		if (!active_test_flag)
 		{
 			if (FirstCall_u==0)
@@ -301,7 +287,8 @@ int main(void)
 		}
 	}
 }
-		
+
+/** This function control program flow with 4 different tasks **/		
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 		 
@@ -313,6 +300,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if (FirstCall_u > 0) FirstCall_u--;
 		if ((Task_2ms_FLAG == TRUE)&&(!active_test_flag)) 	Task++;
 		else Task++;
+		// Task 0: read destination set from control center and handle calculation
 		if (Task == 0)
 		{
 			DISABLE_ALL_IT();
@@ -360,56 +348,79 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		
 				data_receiving_complete=0;
 			}
-	
-				if ((current_location[0] < (received_destination[0]-delta_x))||
-					(current_location[0]> (received_destination[0]+delta_x))) 
-				{
-					destination_setpoint[0] += (float) step_x*(received_destination[0]-current_location[0])/fabs(received_destination[0]-current_location[0]); 
-					x_reached = 0;
-				}
-				else 
-				{
-					destination_setpoint[0]=received_destination[0]; 
-					x_reached = 1;
-				}
-				if ((current_location[1] < (received_destination[1]-delta_y))||
-					(current_location[1]> (received_destination[1]+delta_y))) 
-				{
-					destination_setpoint[1] += (float) step_y*(received_destination[1]-current_location[1])/fabs(received_destination[1]-current_location[1]); 
-					y_reached = 0;
-				}
-				else 
-				{
-					destination_setpoint[1]=received_destination[1]; 
-					y_reached = 1;
-				}
-				
-				if ((current_location[2] - received_destination[2]) > PI)
-				{
-					float pos_receive_theta;
-					pos_receive_theta = received_destination[2] + 2*PI;
-					if ((current_location[2] < (pos_receive_theta-delta_t))||
-						(current_location[2]> (pos_receive_theta+delta_t))) 
-					{
-						destination_setpoint[2] = destination_setpoint[2]+ (float) step_t; 
-						t_reached = 0;
-					}
-					else {destination_setpoint[2]=pos_receive_theta; t_reached = 1;}
-				}
-				else if ((current_location[2] - received_destination[2]) < -PI)
-				{
-						float pos_receive_theta;
-					pos_receive_theta = received_destination[2] - 2*PI;
-					if ((current_location[2] < (pos_receive_theta-delta_t))||(current_location[2]> (pos_receive_theta+delta_t))) {destination_setpoint[2] = destination_setpoint[2]- (float) step_t; t_reached = 0;}
-					else {destination_setpoint[2]=pos_receive_theta; t_reached = 1;}
-				}
-				else 
-				{
-					if ((current_location[2] < (received_destination[2]-delta_t))||(current_location[2]> (received_destination[2]+delta_t))) {destination_setpoint[2] = destination_setpoint[2]+ (float) step_t*(received_destination[2]-current_location[2])/fabs(received_destination[2]-current_location[2]); t_reached = 0;}
-					else {destination_setpoint[2]=received_destination[2]; t_reached = 1;}
-				}
+			// Calculate received data into actual destination setpoint
+			if ((current_location[0] < (received_destination[0]-delta_x))||
+				(current_location[0]> (received_destination[0]+delta_x))) 
+			{
+				destination_setpoint[0] += 
+								(float) step_x*(received_destination[0]-current_location[0]) \
+								/fabs(received_destination[0]-current_location[0]); 
+				x_reached = 0;
+			}
+			else 
+			{
+				destination_setpoint[0]=received_destination[0]; 
+				x_reached = 1;
+			}
+			if ((current_location[1] < (received_destination[1]-delta_y))||
+				(current_location[1]> (received_destination[1]+delta_y))) 
+			{
+				destination_setpoint[1] += 
+								(float) step_y*(received_destination[1]-current_location[1]) \
+								/fabs(received_destination[1]-current_location[1]); 
+				y_reached = 0;
+			}
+			else 
+			{
+				destination_setpoint[1]=received_destination[1]; 
+				y_reached = 1;
+			}
 			
-		}    
+			if ((current_location[2] - received_destination[2]) > PI)
+			{
+				float pos_receive_theta;
+				pos_receive_theta = received_destination[2] + 2*PI;
+				if ((current_location[2] < (pos_receive_theta-delta_t))||
+					(current_location[2]> (pos_receive_theta+delta_t))) 
+				{
+					destination_setpoint[2] = destination_setpoint[2]+ (float) step_t; 
+					t_reached = 0;
+				}
+				else {destination_setpoint[2]=pos_receive_theta; t_reached = 1;}
+			}
+			else if ((current_location[2] - received_destination[2]) < -PI)
+			{
+					float pos_receive_theta;
+				pos_receive_theta = received_destination[2] - 2*PI;
+				if ((current_location[2] < (pos_receive_theta-delta_t))||
+					(current_location[2]> (pos_receive_theta+delta_t))) 
+				{
+					destination_setpoint[2] = destination_setpoint[2]- (float) step_t; 
+					t_reached = 0;
+				}
+				else 
+				{
+					destination_setpoint[2]=pos_receive_theta; 
+					t_reached = 1;
+				}
+			}
+			else 
+			{
+				if ((current_location[2] < (received_destination[2]-delta_t))||
+					(current_location[2]> (received_destination[2]+delta_t))) 
+				{
+					destination_setpoint[2] += 
+								(float) step_t*(received_destination[2]-current_location[2]) \
+								/fabs(received_destination[2]-current_location[2]); 
+					t_reached = 0;
+				}
+				else {
+					destination_setpoint[2]=received_destination[2]; t_reached = 1;
+				}
+			}
+			
+		}
+		// Task 1: Start reading compass data
 		else if (Task == 1)
 		{
 			DISABLE_ALL_IT();
@@ -427,46 +438,49 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 
 		}
+		// Task 2: Start reading encoder and calculate vehicle theta based on compass data
 		else if (Task == 2)
 		{
-			theta = (((theta < (5*PI/180)) && (tmp >(355*PI/180))) || ((tmp < (5*PI/180)) && (theta >(355*PI/180))))?tmp:updateEstimateX(tmp,theta);
+			theta = (((theta < (5*PI/180)) && (tmp >(355*PI/180))) || 
+					  ((tmp < (5*PI/180)) && (theta >(355*PI/180))))?tmp:updateEstimateX(tmp,theta);
 			if(compass_activation_flag)
 			{				
-				pos_oldt[2]=current_location[2];
+				prev_location_theta[2]=current_location[2];
 				current_location[2]=2*PI-theta;
-			if (current_location[2] < 0) current_location[2] = current_location[2] + 2*PI;
-			if (current_location[2] > 2*PI) current_location[2] = current_location[2] - 2*PI;
+				if (current_location[2] < 0) current_location[2] = current_location[2] + 2*PI;
+				if (current_location[2] > 2*PI) current_location[2] = current_location[2] - 2*PI;
 			}
 			ENCODER_READ_Start();		
 		}
-	  else if (Task == 3) 
+		// Task 3: Control the vehicle to move 
+		else if (Task == 3) 
 		{
 			DISABLE_ALL_IT();
 			Controller();
 			if (!active_test_flag)	xyspeed();
 			else
 			{
-			speed[0] = speed_set[0];
-			speed[1] = speed_set[1];
-			speed[2] = speed_set[2];
+				speed[0] = speed_setpoint[0];
+				speed[1] = speed_setpoint[1];
+				speed[2] = speed_setpoint[2];
 			}
-			DRlocate();
+			locateDeadReckoning();
 			Setpoint();
-		//	Controller();
 			UpdateSetpoint();
 			xyspeed_inv();
 			
 	
 			pwmCalculation();
-			speed_old[0] = speed[0];
-			speed_old[1] = speed[1];
-			speed_old[2] = speed[2];
+			prev_speed[0] = speed[0];
+			prev_speed[1] = speed[1];
+			prev_speed[2] = speed[2];
 			if (Connected == 2) Connected=1;
 			else if (Connected == 1) 
 			{
 				if(Mess_wait==0)
 				{
-					Message_Create(current_location); HAL_UART_Transmit(&huart3, data, sizeof(data),100);
+					createMessage(current_location); 
+					HAL_UART_Transmit(&huart3, full_message, sizeof(full_message),100);
 					Mess_wait=1;
 				}	
 				else
@@ -479,7 +493,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	HAL_TIM_Base_Start_IT(&htim6);
 	
 		
-			
+	// Handle overflow of reading encoder using input capture 		
 	if (Task == 2)
 	{
 		if (htim->Instance==TIM2)
@@ -491,8 +505,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				en_2_A=updateEstimate((en_2_A_temp+OvFl_2*65535),en_2_A,2);
 				if	(clockwise_2 == 1)		v2=timerscale/fabs(en_2_A);
 				else v2=-timerscale/fabs(en_2_A); 
-			}	
-//			}
+			}
 		}
 		if (htim->Instance==TIM3)
 		{
@@ -532,7 +545,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 	}
 }
-void Message_Create(float* val)
+
+/** This function create message of current_location of vehicle **/
+void createMessage(float* val)
 {
 	int8_t* mes_x=malloc(6*sizeof(char));
 	int8_t* mes_y=malloc(6*sizeof(char));
@@ -559,99 +574,104 @@ void Message_Create(float* val)
 	mes_t[3]=((unsigned int)(fabs(val[2])*10)%10);
 	mes_t[4]=((unsigned int)(fabs(val[2])*100)%10);
 	for (int i=0;i<=4;i++){
-		data[i] = mes_x[i]+48;
-		data[i+5] = mes_y[i]+48;
-		data[i+10] = mes_t[i]+48;
+		full_message[i] = mes_x[i]+48;
+		full_message[i+5] = mes_y[i]+48;
+		full_message[i+10] = mes_t[i]+48;
 	}
 	free(mes_x);
 	free(mes_y);
 	free(mes_t);
 }
+
+/** This function handle receiving message of destination **/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)  
 {
-    uint8_t l;
+    uint8_t index;
     if (huart->Instance == USART3)  //current UART
         {
-				if (Rx_indx==0) {for (l=0;l<100;l++) Rx_Buffer[l]=0;}   //clear Rx_Buffer before receiving new data 		
-        if (Rx_data != 35) //if received data different from ascii 13 (enter)
+			 //clear Rx_Buffer before receiving new full_message 		
+			if (Rx_indx==0) {for (index=0;index<100;index++) Rx_Buffer[index]=0;}  
+			//if received data different from ascii 13 (enter)
+			if (Rx_data != 35) 
             {
-            Rx_Buffer[Rx_indx++]=Rx_data;    //add data to Rx_Buffer
+				Rx_Buffer[Rx_indx++]=Rx_data;    //add data to Rx_Buffer
             }
-        else            //if received data = 13
-            {
-							if (Connected != 1)
-							{
-								for (int k=0;k<30;k++)
-								{
-									if (Rx_Buffer[k]==33)
-										{
-											HAL_UART_Transmit(&huart3, connected, sizeof(connected),100);
-											Connected=2;
-										}
-								}
-							}
-							if(Rx_indx==15)
-							{
-								
-								data_receiving_complete=1;//transfer complete, data is ready to read
-							}
-							Rx_indx=0;
+			else            //if received data = 13
+			{
+				if (Connected != 1)
+				{
+					for (int k=0;k<30;k++)
+					{
+						if (Rx_Buffer[k]==33)
+						{
+							HAL_UART_Transmit(&huart3, connected, sizeof(connected),100);
+							Connected=2;
 						}
+					}
+				}
+				if(Rx_indx==15)
+				{
+					
+					data_receiving_complete=1;//transfer complete, data is ready to read
+				}
+				Rx_indx=0;
 				
-        HAL_UART_Receive_IT(&huart3, &Rx_data, 1);   //activate UART receive interrupt every time
+			}
+				
+			HAL_UART_Receive_IT(&huart3, &Rx_data, 1);   //activate UART receive interrupt every time
         }
 
 }
 
-
+/** This function handle reading ENCODER and 
+	calculate wheel speed clockwise and reverse clockwise in 4 stages of input capture **/
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 			//////////////////////////////////////ENCODER 3
 	if (htim->Instance==TIM8)
 	{
 			//w=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_1);
-			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==0) && (HAL_GPIO_ReadPin(ENPIN_3_B)==0) ) state_3=3;
-			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==0) && (HAL_GPIO_ReadPin(ENPIN_3_B)==1) ) state_3=0;
-			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==1) && (HAL_GPIO_ReadPin(ENPIN_3_B)==1) ) state_3=1;
-			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==1) && (HAL_GPIO_ReadPin(ENPIN_3_B)==0) ) state_3=2;
+			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==0) && (HAL_GPIO_ReadPin(ENPIN_3_B)==0)) state_3=3;
+			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==0) && (HAL_GPIO_ReadPin(ENPIN_3_B)==1)) state_3=0;
+			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==1) && (HAL_GPIO_ReadPin(ENPIN_3_B)==1)) state_3=1;
+			if ((HAL_GPIO_ReadPin(ENPIN_3_A)==1) && (HAL_GPIO_ReadPin(ENPIN_3_B)==0)) state_3=2;
 			switch(clockwise_3)
 			{
 				case 0:
 				{
 					if ((state_3==1)&&(prestate_3==3))
 					{  		
-							en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_1);	
-							prestate_3=2;
-							pre2state_3=3;
+						en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_1);	
+						prestate_3=2;
+						pre2state_3=3;
 					}
 					if ((state_3==2)&&(prestate_3==0))
 					{  	
-							if (FirstCall_3  > 0)  FirstCall_3--;
-							else if (FirstCall_3 == 0)
-							{								
+						if (FirstCall_3  > 0)  FirstCall_3--;
+						else if (FirstCall_3 == 0)
+						{								
 							en_3_A=updateEstimate(en_3_A_temp,en_3_A,3);
-								
 							v3=-timerscale/(fabs(en_3_A)+OvFl_3*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim8,0);
-							prestate_3=3;
-							pre2state_3=0;
-							OvFl_3=0;
+						}								
+						__HAL_TIM_SetCounter(&htim8,0);
+						prestate_3=3;
+						pre2state_3=0;
+						OvFl_3=0;
 					}
 					if ((state_3==3)&&(prestate_3==1))
 					{  		
-							en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_1);		
-							prestate_3=0;
-							pre2state_3=1;
+						en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_1);		
+						prestate_3=0;
+						pre2state_3=1;
 					}
 					if ((state_3==0)&&(prestate_3==2))
 					{  		
-							en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
-							v3=-timerscale/(fabs(en_3_A)+OvFl_3*65535);			
-							__HAL_TIM_SetCounter(&htim8,0);
-							prestate_3=1;
-							pre2state_3=2;
-							OvFl_3=0;
+						en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
+						v3=-timerscale/(fabs(en_3_A)+OvFl_3*65535);			
+						__HAL_TIM_SetCounter(&htim8,0);
+						prestate_3=1;
+						pre2state_3=2;
+						OvFl_3=0;
 					}
 					if (state_3==prestate_3)
 					{
@@ -661,9 +681,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 					if ((clockwise_3_wait==1) && (state_3 == pre2state_3))
 					{
 						clockwise_3=1;
-				//		en_3_A=0;
 						FirstCall_3 = FirstCycles;
-//						prestate_4 = 0;
 					}
 					break;
 				}
@@ -672,36 +690,36 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 					
 					if ((state_3==1)&&(prestate_3==3))
 					{  		
-							en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_3);	
-							prestate_3=0;
-							pre2state_3=3;
+						en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_3);	
+						prestate_3=0;
+						pre2state_3=3;
 					}
 					if ((state_3==2)&&(prestate_3==0))
 					{  		
-							if (FirstCall_3 > 0)  FirstCall_3--;
-							else if (FirstCall_3 == 0)
-							{			
-							en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
-							v3=timerscale/(fabs(en_3_A)+OvFl_3*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim8,0);
-							prestate_3=1;
-							pre2state_3=0;
-							OvFl_3=0;
+						if (FirstCall_3 > 0)  FirstCall_3--;
+						else if (FirstCall_3 == 0)
+						{			
+						en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
+						v3=timerscale/(fabs(en_3_A)+OvFl_3*65535);
+						}								
+						__HAL_TIM_SetCounter(&htim8,0);
+						prestate_3=1;
+						pre2state_3=0;
+						OvFl_3=0;
 					}
 					if ((state_3==3)&&(prestate_3==1))
 					{  		
-							en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_3);		
-							prestate_3=2;
-							pre2state_3=1;
+						en_3_A_temp=__HAL_TIM_GetCompare(&htim8,TIM_CHANNEL_3);		
+						prestate_3=2;
+						pre2state_3=1;
 					}
 					if ((state_3==0)&&(prestate_3==2))
 					{  		
-							en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
-							v3=timerscale/(fabs(en_3_A)+OvFl_3*65535);			
-							__HAL_TIM_SetCounter(&htim8,0);
-							prestate_3=3;
-							pre2state_3=2;
+						en_3_A=updateEstimate((en_3_A_temp),en_3_A,3);
+						v3=timerscale/(fabs(en_3_A)+OvFl_3*65535);			
+						__HAL_TIM_SetCounter(&htim8,0);
+						prestate_3=3;
+						pre2state_3=2;
 						OvFl_3=0;
 					}
 					if (state_3==prestate_3)
@@ -711,379 +729,365 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 					if ((clockwise_3_wait==1) && (state_3 == pre2state_3))
 					{
 						clockwise_3=0;
-					//	en_3_A=0;
 						FirstCall_3 = FirstCycles;
-//						prestate_4 = 0;
 					}
 					break;
 				};
 			}
 		}
 
-		//////////////////////////////////////ENCODER 1
+	//////////////////////////////////////ENCODER 1
 	else if (htim->Instance==TIM3)
-		{				
-			if ((HAL_GPIO_ReadPin(ENPIN_1_A)==0) && (HAL_GPIO_ReadPin(ENPIN_1_B)==0) ) {state_1=3;}
-			if ((HAL_GPIO_ReadPin(ENPIN_1_A)==0) && (HAL_GPIO_ReadPin(ENPIN_1_B)==1) ) {state_1=0;} 
-			if ((HAL_GPIO_ReadPin(ENPIN_1_A)==1) && (HAL_GPIO_ReadPin(ENPIN_1_B)==1) ) {state_1=1;} 
-			if ((HAL_GPIO_ReadPin(ENPIN_1_A)==1) && (HAL_GPIO_ReadPin(ENPIN_1_B)==0) ) state_1=2;
-			switch(clockwise_1)
+	{				
+		if ((HAL_GPIO_ReadPin(ENPIN_1_A)==0) && (HAL_GPIO_ReadPin(ENPIN_1_B)==0) ) {state_1=3;}
+		if ((HAL_GPIO_ReadPin(ENPIN_1_A)==0) && (HAL_GPIO_ReadPin(ENPIN_1_B)==1) ) {state_1=0;} 
+		if ((HAL_GPIO_ReadPin(ENPIN_1_A)==1) && (HAL_GPIO_ReadPin(ENPIN_1_B)==1) ) {state_1=1;} 
+		if ((HAL_GPIO_ReadPin(ENPIN_1_A)==1) && (HAL_GPIO_ReadPin(ENPIN_1_B)==0) ) state_1=2;
+		switch(clockwise_1)
+		{
+			case 0:
 			{
-				case 0:
-				{
-					if ((state_1==1)&&(prestate_1==3))
-					{  		
-							en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_1);	
-							prestate_1=2;
-							pre2state_1=3;
-					}
-					if ((state_1==2)&&(prestate_1==0))
-					{  	
-						//t++;
-							if (FirstCall_1  > 0)  FirstCall_1--;
-							else if (FirstCall_1 == 0)  
-							{								
-							en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
-								
-							v1=-timerscale/(fabs(en_1_A)+OvFl_1*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim3,0);
-							prestate_1=3;
-							pre2state_1=0;
-							OvFl_1=0;
-					}
-					if ((state_1==3)&&(prestate_1==1))
-					{  		
-							en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_1);		
-							prestate_1=0;
-							pre2state_1=1;
-					}
-					if ((state_1==0)&&(prestate_1==2))
-					{  		
-							en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
-							v1=-timerscale/(fabs(en_1_A)+OvFl_1*65535);			
-							__HAL_TIM_SetCounter(&htim3,0);
-							prestate_1=1;
-							pre2state_1=2;
-							OvFl_1=0;
-					}
-					if (state_1==prestate_1)
-					{
-							clockwise_1_wait=1;
-							
-					}
-					if ((clockwise_1_wait==1) && (state_1 == pre2state_1))
-					{
-						clockwise_1=1;
-				//		en_1_A=0;
-						FirstCall_1 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
+				if ((state_1==1)&&(prestate_1==3))
+				{  		
+					en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_1);	
+					prestate_1=2;
+					pre2state_1=3;
 				}
-				case 1:
+				if ((state_1==2)&&(prestate_1==0))
+				{  	
+					//t++;
+					if (FirstCall_1  > 0)  FirstCall_1--;
+					else if (FirstCall_1 == 0)  
+					{								
+						en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
+						
+						v1=-timerscale/(fabs(en_1_A)+OvFl_1*65535);
+					}								
+					__HAL_TIM_SetCounter(&htim3,0);
+					prestate_1=3;
+					pre2state_1=0;
+					OvFl_1=0;
+				}
+				if ((state_1==3)&&(prestate_1==1))
+				{  		
+					en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_1);		
+					prestate_1=0;
+					pre2state_1=1;
+				}
+				if ((state_1==0)&&(prestate_1==2))
+				{  		
+					en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
+					v1=-timerscale/(fabs(en_1_A)+OvFl_1*65535);			
+					__HAL_TIM_SetCounter(&htim3,0);
+					prestate_1=1;
+					pre2state_1=2;
+					OvFl_1=0;
+				}
+				if (state_1==prestate_1)
 				{
-					
-					if ((state_1==1)&&(prestate_1==3))
-					{  		
-							en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_3);	
-							prestate_1=0;
-							pre2state_1=3;
-					}
-					if ((state_1==2)&&(prestate_1==0))
-					{  		
-							if (FirstCall_1  > 0)  FirstCall_1--;
-							else if (FirstCall_1 == 0)
-							{			
-							en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
-							v1=timerscale/(fabs(en_1_A)+OvFl_1*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim3,0);
-							prestate_1=1;
-							pre2state_1=0;
-							OvFl_1=0;
-					}
-					if ((state_1==3)&&(prestate_1==1))
-					{  		
-							en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_3);		
-							prestate_1=2;
-							pre2state_1=1;
-					}
-					if ((state_1==0)&&(prestate_1==2))
-					{  		
-							en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
-							v1=timerscale/(fabs(en_1_A)+OvFl_1*65535);			
-							__HAL_TIM_SetCounter(&htim3,0);
-							prestate_1=3;
-							pre2state_1=2;
-						OvFl_1=0;
-					}
-					if (state_1==prestate_1)
-					{
-							clockwise_1_wait=1;
-					}
-					if ((clockwise_1_wait==1) && (state_1 == pre2state_1))
-					{
-						clockwise_1=0;
-					//	en_1_A=0;
-						FirstCall_1 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
-				};
-
+					clockwise_1_wait=1;
+						
+				}
+				if ((clockwise_1_wait==1) && (state_1 == pre2state_1))
+				{
+					clockwise_1=1;
+					FirstCall_1 = FirstCycles;
+				}
+				break;
 			}
-		 
+			case 1:
+			{
+				
+				if ((state_1==1)&&(prestate_1==3))
+				{  		
+					en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_3);	
+					prestate_1=0;
+					pre2state_1=3;
+				}
+				if ((state_1==2)&&(prestate_1==0))
+				{  		
+					if (FirstCall_1  > 0)  FirstCall_1--;
+					else if (FirstCall_1 == 0)
+					{			
+						en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
+						v1=timerscale/(fabs(en_1_A)+OvFl_1*65535);
+					}								
+					__HAL_TIM_SetCounter(&htim3,0);
+					prestate_1=1;
+					pre2state_1=0;
+					OvFl_1=0;
+				}
+				if ((state_1==3)&&(prestate_1==1))
+				{  		
+					en_1_A_temp=HAL_TIM_ReadCapturedValue(&htim3,TIM_CHANNEL_3);		
+					prestate_1=2;
+					pre2state_1=1;
+				}
+				if ((state_1==0)&&(prestate_1==2))
+				{  		
+					en_1_A=updateEstimate(en_1_A_temp,en_1_A,1);
+					v1=timerscale/(fabs(en_1_A)+OvFl_1*65535);			
+					__HAL_TIM_SetCounter(&htim3,0);
+					prestate_1=3;
+					pre2state_1=2;
+					OvFl_1=0;
+				}
+				if (state_1==prestate_1)
+				{
+					clockwise_1_wait=1;
+				}
+				if ((clockwise_1_wait==1) && (state_1 == pre2state_1))
+				{
+					clockwise_1=0;
+					FirstCall_1 = FirstCycles;
+				}
+				break;
+			};
+
 		}
+	 
+	}
 
 	 ///////////////////////////////////////ENCODER 2
 	 else if (htim->Instance==TIM2)
-		{				
-			if ((HAL_GPIO_ReadPin(ENPIN_2_A)==0) && (HAL_GPIO_ReadPin(ENPIN_2_B)==0) ) state_2=3;
-			if ((HAL_GPIO_ReadPin(ENPIN_2_A)==0) && (HAL_GPIO_ReadPin(ENPIN_2_B)==1) ) state_2=0; 
-			if ((HAL_GPIO_ReadPin(ENPIN_2_A)==1) && (HAL_GPIO_ReadPin(ENPIN_2_B)==1) ) state_2=1; 
-			if ((HAL_GPIO_ReadPin(ENPIN_2_A)==1) && (HAL_GPIO_ReadPin(ENPIN_2_B)==0) ) state_2=2;
-			switch(clockwise_2)
+	{				
+		if ((HAL_GPIO_ReadPin(ENPIN_2_A)==0) && (HAL_GPIO_ReadPin(ENPIN_2_B)==0) ) state_2=3;
+		if ((HAL_GPIO_ReadPin(ENPIN_2_A)==0) && (HAL_GPIO_ReadPin(ENPIN_2_B)==1) ) state_2=0; 
+		if ((HAL_GPIO_ReadPin(ENPIN_2_A)==1) && (HAL_GPIO_ReadPin(ENPIN_2_B)==1) ) state_2=1; 
+		if ((HAL_GPIO_ReadPin(ENPIN_2_A)==1) && (HAL_GPIO_ReadPin(ENPIN_2_B)==0) ) state_2=2;
+		switch(clockwise_2)
+		{
+			case 0:
 			{
-				case 0:
-				{
-					if ((state_2==1)&&(prestate_2==3))
-					{  		
-							en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_1);	
-							prestate_2=2;
-							pre2state_2=3;
-					}
-					if ((state_2==2)&&(prestate_2==0))
-					{  	
-							if (FirstCall_2 > 0)  FirstCall_2--;
-							else if (FirstCall_2 == 0)
-							{								
-							en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
-								
-							v2=-timerscale/(fabs(en_2_A)+OvFl_2*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim2,0);
-							prestate_2=3;
-							pre2state_2=0;
-							OvFl_2=0;
-					}
-					if ((state_2==3)&&(prestate_2==1))
-					{  		
-							en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_1);		
-							prestate_2=0;
-							pre2state_2=1;
-					}
-					if ((state_2==0)&&(prestate_2==2))
-					{  		
-							en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
-							v2=-timerscale/(fabs(en_2_A)+OvFl_2*65535);			
-							__HAL_TIM_SetCounter(&htim2,0);
-							prestate_2=1;
-							pre2state_2=2;
-							OvFl_2=0;
-					}
-					if (state_2==prestate_2)
-					{
-							clockwise_2_wait=1;
-							
-					}
-					if ((clockwise_2_wait==1) && (state_2 == pre2state_2))
-					{
-						clockwise_2=1;
-				//		en_2_A=0;
-						FirstCall_2 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
+				if ((state_2==1)&&(prestate_2==3))
+				{  		
+					en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_1);	
+					prestate_2=2;
+					pre2state_2=3;
 				}
-				case 1:
+				if ((state_2==2)&&(prestate_2==0))
+				{  	
+					if (FirstCall_2 > 0)  FirstCall_2--;
+					else if (FirstCall_2 == 0)
+					{								
+					en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
+						
+					v2=-timerscale/(fabs(en_2_A)+OvFl_2*65535);
+					}								
+					__HAL_TIM_SetCounter(&htim2,0);
+					prestate_2=3;
+					pre2state_2=0;
+					OvFl_2=0;
+				}
+				if ((state_2==3)&&(prestate_2==1))
+				{  		
+					en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_1);		
+					prestate_2=0;
+					pre2state_2=1;
+				}
+				if ((state_2==0)&&(prestate_2==2))
+				{  		
+					en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
+					v2=-timerscale/(fabs(en_2_A)+OvFl_2*65535);			
+					__HAL_TIM_SetCounter(&htim2,0);
+					prestate_2=1;
+					pre2state_2=2;
+					OvFl_2=0;
+				}
+				if (state_2==prestate_2)
 				{
-					
-					if ((state_2==1)&&(prestate_2==3))
-					{  		
-							en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_3);	
-							prestate_2=0;
-							pre2state_2=3;
-					}
-					if ((state_2==2)&&(prestate_2==0))
-					{  		
-							if (FirstCall_2 > 0)  FirstCall_2--;
-							else if (FirstCall_2 == 0)
-							{			
-							en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
-							v2=timerscale/(fabs(en_2_A)+OvFl_2*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim2,0);
-							prestate_2=1;
-							pre2state_2=0;
-							OvFl_2=0;
-					}
-					if ((state_2==3)&&(prestate_2==1))
-					{  		
-							en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_3);		
-							prestate_2=2;
-							pre2state_2=1;
-					}
-					if ((state_2==0)&&(prestate_2==2))
-					{  		
-							en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
-							v2=timerscale/(fabs(en_2_A)+OvFl_2*65535);			
-							__HAL_TIM_SetCounter(&htim2,0);
-							prestate_2=3;
-							pre2state_2=2;
-						OvFl_2=0;
-					}
-					if (state_2==prestate_2)
-					{
-							clockwise_2_wait=1;
-					}
-					if ((clockwise_2_wait==1) && (state_2 == pre2state_2))
-					{
-						clockwise_2=0;
-					//	en_2_A=0;
-						FirstCall_2 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
-				};
-
+					clockwise_2_wait=1;
+				}
+				if ((clockwise_2_wait==1) && (state_2 == pre2state_2))
+				{
+					clockwise_2=1;
+					FirstCall_2 = FirstCycles;
+				}
+				break;
 			}
-		 
+			case 1:
+			{
+				
+				if ((state_2==1)&&(prestate_2==3))
+				{  		
+					en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_3);	
+					prestate_2=0;
+					pre2state_2=3;
+				}
+				if ((state_2==2)&&(prestate_2==0))
+				{  		
+					if (FirstCall_2 > 0)  FirstCall_2--;
+					else if (FirstCall_2 == 0)
+					{			
+					en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
+					v2=timerscale/(fabs(en_2_A)+OvFl_2*65535);
+					}								
+					__HAL_TIM_SetCounter(&htim2,0);
+					prestate_2=1;
+					pre2state_2=0;
+					OvFl_2=0;
+				}
+				if ((state_2==3)&&(prestate_2==1))
+				{  		
+					en_2_A_temp=HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_3);		
+					prestate_2=2;
+					pre2state_2=1;
+				}
+				if ((state_2==0)&&(prestate_2==2))
+				{  		
+					en_2_A=updateEstimate(en_2_A_temp,en_2_A,2);
+					v2=timerscale/(fabs(en_2_A)+OvFl_2*65535);			
+					__HAL_TIM_SetCounter(&htim2,0);
+					prestate_2=3;
+					pre2state_2=2;
+					OvFl_2=0;
+				}
+				if (state_2==prestate_2)
+				{
+					clockwise_2_wait=1;
+				}
+				if ((clockwise_2_wait==1) && (state_2 == pre2state_2))
+				{
+					clockwise_2=0;
+					FirstCall_2 = FirstCycles;
+				}
+				break;
+			};
+
 		}
+	 
+	}
 
 		
 
-		//////////////////////////////////////ENCODER 4
-	 else	if (htim->Instance==TIM4)
-		{	
-			if ((HAL_GPIO_ReadPin(ENPIN_4_A)==0) && (HAL_GPIO_ReadPin(ENPIN_4_B)==0) ) state_4=3;
-			if ((HAL_GPIO_ReadPin(ENPIN_4_A)==0) && (HAL_GPIO_ReadPin(ENPIN_4_B)==1) ) state_4=0;
-			if ((HAL_GPIO_ReadPin(ENPIN_4_A)==1) && (HAL_GPIO_ReadPin(ENPIN_4_B)==1) ) state_4=1;
-			if ((HAL_GPIO_ReadPin(ENPIN_4_A)==1) && (HAL_GPIO_ReadPin(ENPIN_4_B)==0) ) state_4=2;
-			switch(clockwise_4)
+	//////////////////////////////////////ENCODER 4
+	else if (htim->Instance==TIM4)
+	{	
+		if ((HAL_GPIO_ReadPin(ENPIN_4_A)==0) && (HAL_GPIO_ReadPin(ENPIN_4_B)==0) ) state_4=3;
+		if ((HAL_GPIO_ReadPin(ENPIN_4_A)==0) && (HAL_GPIO_ReadPin(ENPIN_4_B)==1) ) state_4=0;
+		if ((HAL_GPIO_ReadPin(ENPIN_4_A)==1) && (HAL_GPIO_ReadPin(ENPIN_4_B)==1) ) state_4=1;
+		if ((HAL_GPIO_ReadPin(ENPIN_4_A)==1) && (HAL_GPIO_ReadPin(ENPIN_4_B)==0) ) state_4=2;
+		switch(clockwise_4)
+		{
+			case 0:
 			{
-				case 0:
-				{
-					if ((state_4==1)&&(prestate_4==3))
-					{  		
-							en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_1);	
-							prestate_4=2;
-							pre2state_4=3;
-					}
-					if ((state_4==2)&&(prestate_4==0))
-					{  	
-							if (FirstCall_4 > 0)  FirstCall_4--;
-							else if (FirstCall_4 == 0)  
-							{								
-							en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
-								
-							v4=-timerscale/(fabs(en_4_A)+OvFl_4*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim4,0);
-							prestate_4=3;
-							pre2state_4=0;
-							OvFl_4=0;
-					}
-					if ((state_4==3)&&(prestate_4==1))
-					{  		
-							en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_1);		
-							prestate_4=0;
-							pre2state_4=1;
-					}
-					if ((state_4==0)&&(prestate_4==2))
-					{  		
-							en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
-							v4=-timerscale/(fabs(en_4_A)+OvFl_4*65535);			
-							__HAL_TIM_SetCounter(&htim4,0);
-							prestate_4=1;
-							pre2state_4=2;
-							OvFl_4=0;	
-					}
-					if (state_4==prestate_4)
-					{
-							clockwise_4_wait=1;
-							
-					}
-					if ((clockwise_4_wait==1) && (state_4 == pre2state_4))
-					{
-						clockwise_4=1;
-				//		en_4_A=0;
-						FirstCall_4 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
+				if ((state_4==1)&&(prestate_4==3))
+				{  		
+						en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_1);	
+						prestate_4=2;
+						pre2state_4=3;
 				}
-				case 1:
+				if ((state_4==2)&&(prestate_4==0))
+				{  	
+						if (FirstCall_4 > 0)  FirstCall_4--;
+						else if (FirstCall_4 == 0)  
+						{								
+						en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
+							
+						v4=-timerscale/(fabs(en_4_A)+OvFl_4*65535);
+						}								
+						__HAL_TIM_SetCounter(&htim4,0);
+						prestate_4=3;
+						pre2state_4=0;
+						OvFl_4=0;
+				}
+				if ((state_4==3)&&(prestate_4==1))
+				{  		
+						en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_1);		
+						prestate_4=0;
+						pre2state_4=1;
+				}
+				if ((state_4==0)&&(prestate_4==2))
+				{  		
+						en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
+						v4=-timerscale/(fabs(en_4_A)+OvFl_4*65535);			
+						__HAL_TIM_SetCounter(&htim4,0);
+						prestate_4=1;
+						pre2state_4=2;
+						OvFl_4=0;	
+				}
+				if (state_4==prestate_4)
 				{
-					
-					if ((state_4==1)&&(prestate_4==3))
-					{  		
-							en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_3);	
-							prestate_4=0;
-							pre2state_4=3;
-					}
-					if ((state_4==2)&&(prestate_4==0))
-					{  		
-							if (FirstCall_4 > 0)  FirstCall_4--;
-							else if (FirstCall_4 == 0)
-							{			
-							en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
-							v4=timerscale/(fabs(en_4_A)+OvFl_4*65535);
-							}								
-							__HAL_TIM_SetCounter(&htim4,0);
-							prestate_4=1;
-							pre2state_4=0;
-							OvFl_4=0;
-					}
-					if ((state_4==3)&&(prestate_4==1))
-					{  		
-							en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_3);		
-							prestate_4=2;
-							pre2state_4=1;
-					}
-					if ((state_4==0)&&(prestate_4==2))
-					{  		
-							en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
-							v4=timerscale/(fabs(en_4_A)+OvFl_4*65535);			
-							__HAL_TIM_SetCounter(&htim4,0);
-							prestate_4=3;
-							pre2state_4=2;
-							OvFl_4=0;
-					}
-					if (state_4==prestate_4)
-					{
-							clockwise_4_wait=1;
-					}
-					if ((clockwise_4_wait==1) && (state_4 == pre2state_4))
-					{
-						clockwise_4=0;
-					//	en_4_A=0;
-						FirstCall_4 = FirstCycles;
-//						prestate_4 = 0;
-					}
-					break;
-				};
-
+						clockwise_4_wait=1;
+						
+				}
+				if ((clockwise_4_wait==1) && (state_4 == pre2state_4))
+				{
+					clockwise_4=1;
+					FirstCall_4 = FirstCycles;
+				}
+				break;
 			}
-		 
+			case 1:
+			{
+				
+				if ((state_4==1)&&(prestate_4==3))
+				{  		
+						en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_3);	
+						prestate_4=0;
+						pre2state_4=3;
+				}
+				if ((state_4==2)&&(prestate_4==0))
+				{  		
+						if (FirstCall_4 > 0)  FirstCall_4--;
+						else if (FirstCall_4 == 0)
+						{			
+						en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
+						v4=timerscale/(fabs(en_4_A)+OvFl_4*65535);
+						}								
+						__HAL_TIM_SetCounter(&htim4,0);
+						prestate_4=1;
+						pre2state_4=0;
+						OvFl_4=0;
+				}
+				if ((state_4==3)&&(prestate_4==1))
+				{  		
+						en_4_A_temp=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_3);		
+						prestate_4=2;
+						pre2state_4=1;
+				}
+				if ((state_4==0)&&(prestate_4==2))
+				{  		
+						en_4_A=updateEstimate(en_4_A_temp,en_4_A,3);
+						v4=timerscale/(fabs(en_4_A)+OvFl_4*65535);			
+						__HAL_TIM_SetCounter(&htim4,0);
+						prestate_4=3;
+						pre2state_4=2;
+						OvFl_4=0;
+				}
+				if (state_4==prestate_4)
+				{
+						clockwise_4_wait=1;
+				}
+				if ((clockwise_4_wait==1) && (state_4 == pre2state_4))
+				{
+					clockwise_4=0;
+					FirstCall_4 = FirstCycles;
+				}
+				break;
+			};
+	
 		}
-
+	
+	}
+	
 
 }
 
-
+/** This function control PWM for 4 wheels **/
 void Start_wheel(uint16_t NUM, float SPEED)
 {
 	switch (NUM)
 	{
-	case 2:
-	{
+		case 2:
+		{
 			if (SPEED > threshold) 
 			{
 				HAL_GPIO_WritePin(PIN_1_A,GPIO_PIN_SET);
 				HAL_GPIO_WritePin(PIN_1_B,GPIO_PIN_RESET);
 			}
-			else if ((SPEED < -threshold) ||  ((SPEED < -threshold2) && ((v1 != 0) || (v3 != 0) || (v4 != 0) )))
+			else if ((SPEED < -threshold) ||  ((SPEED < -threshold2) && 
+					 ((v1 != 0) || (v3 != 0) || (v4 != 0) )))
 			{
 				HAL_GPIO_WritePin(PIN_1_A,GPIO_PIN_RESET);
 				HAL_GPIO_WritePin(PIN_1_B,GPIO_PIN_SET);
@@ -1094,17 +1098,18 @@ void Start_wheel(uint16_t NUM, float SPEED)
 				HAL_GPIO_WritePin(PIN_1_B,GPIO_PIN_RESET);
 				SPEED=0;
 			}
-		__HAL_TIM_SET_COMPARE(&htim1,PWM1,(int) fabs(SPEED));
-		break;
-	}
-	case 1:
-	{
+			__HAL_TIM_SET_COMPARE(&htim1,PWM1,(int) fabs(SPEED));
+			break;
+		}
+		case 1:
+		{
 			if (SPEED > threshold) 
 			{
 				HAL_GPIO_WritePin(PIN_2_A,GPIO_PIN_SET);
 				HAL_GPIO_WritePin(PIN_2_B,GPIO_PIN_RESET);
 			}
-			else if ((SPEED < -threshold) ||  ((SPEED < -threshold2) && ((v2 != 0) || (v3 != 0) || (v4 != 0) )))
+			else if ((SPEED < -threshold) ||  ((SPEED < -threshold2) && 
+					 ((v2 != 0) || (v3 != 0) || (v4 != 0) )))
 			{
 				HAL_GPIO_WritePin(PIN_2_A,GPIO_PIN_RESET);
 				HAL_GPIO_WritePin(PIN_2_B,GPIO_PIN_SET);
@@ -1116,11 +1121,11 @@ void Start_wheel(uint16_t NUM, float SPEED)
 				SPEED=0;
 			}
 			__HAL_TIM_SET_COMPARE(&htim1,PWM2,(int) fabs(SPEED));
-	
-		break;
-	}
-	case 3:
-	{
+			
+			break;
+		}
+		case 3:
+		{
 			if (SPEED > threshold)
 			{
 				HAL_GPIO_WritePin(PIN_3_A,GPIO_PIN_SET);
@@ -1137,14 +1142,14 @@ void Start_wheel(uint16_t NUM, float SPEED)
 				HAL_GPIO_WritePin(PIN_3_B,GPIO_PIN_RESET);
 				SPEED=0;
 			}
+			
+			
+			__HAL_TIM_SET_COMPARE(&htim1,PWM3,(int) fabs(SPEED));
 		
-		
-		__HAL_TIM_SET_COMPARE(&htim1,PWM3,(int) fabs(SPEED));
-	
-		break;
-	}
-	case 4:
-	{
+			break;
+		}
+		case 4:
+		{
 			if (SPEED > threshold)
 			{
 				HAL_GPIO_WritePin(PIN_4_A,GPIO_PIN_RESET);
@@ -1154,7 +1159,7 @@ void Start_wheel(uint16_t NUM, float SPEED)
 			{
 				HAL_GPIO_WritePin(PIN_4_A,GPIO_PIN_SET);
 				HAL_GPIO_WritePin(PIN_4_B,GPIO_PIN_RESET);
-
+			
 			}
 			else 
 			{
@@ -1162,11 +1167,11 @@ void Start_wheel(uint16_t NUM, float SPEED)
 				HAL_GPIO_WritePin(PIN_4_B,GPIO_PIN_RESET);
 				SPEED=0;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	
 			}
+			
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,(int) fabs(SPEED));
 		
-		__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,(int) fabs(SPEED));
-	
-		break;
-	}
+			break;
+		}
 	}
 }
 
@@ -1187,14 +1192,14 @@ void ENCODER_READ_Start(void)
 
 void DISABLE_ALL_IT(void)
 {
-		HAL_TIM_IC_Stop(&htim2,TIM_CHANNEL_1);
-		HAL_TIM_IC_Stop(&htim2,TIM_CHANNEL_3);
-		HAL_TIM_IC_Stop(&htim3,TIM_CHANNEL_1);
-		HAL_TIM_IC_Stop(&htim3,TIM_CHANNEL_3);
-		HAL_TIM_IC_Stop(&htim4,TIM_CHANNEL_1);
-		HAL_TIM_IC_Stop(&htim4,TIM_CHANNEL_3);
-		HAL_TIM_IC_Stop(&htim8,TIM_CHANNEL_1);
-		HAL_TIM_IC_Stop(&htim8,TIM_CHANNEL_3);
+	HAL_TIM_IC_Stop(&htim2,TIM_CHANNEL_1);
+	HAL_TIM_IC_Stop(&htim2,TIM_CHANNEL_3);
+	HAL_TIM_IC_Stop(&htim3,TIM_CHANNEL_1);
+	HAL_TIM_IC_Stop(&htim3,TIM_CHANNEL_3);
+	HAL_TIM_IC_Stop(&htim4,TIM_CHANNEL_1);
+	HAL_TIM_IC_Stop(&htim4,TIM_CHANNEL_3);
+	HAL_TIM_IC_Stop(&htim8,TIM_CHANNEL_1);
+	HAL_TIM_IC_Stop(&htim8,TIM_CHANNEL_3);
 	
 }
 void ENABLE_ALL_IT(void)

@@ -41,7 +41,7 @@
   * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
   * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
   * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  * SERVICES; LOSS OF USE, full_message, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
   * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -89,7 +89,7 @@
   */
 
 /************************* Miscellaneous Configuration ************************/
-/*!< Uncomment the following line if you need to use external SRAM or SDRAM as data memory  */
+/*!< Uncomment the following line if you need to use external SRAM or SDRAM as full_message memory  */
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx) || defined(STM32F417xx)\
  || defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx)\
  || defined(STM32F469xx) || defined(STM32F479xx) || defined(STM32F412Zx) || defined(STM32F412Vx)
@@ -291,7 +291,7 @@ void SystemCoreClockUpdate(void)
   * @brief  Setup the external memory controller.
   *         Called in startup_stm32f4xx.s before jump to main.
   *         This function configures the external memories (SRAM/SDRAM)
-  *         This SRAM/SDRAM will be used as program data memory (including heap and stack).
+  *         This SRAM/SDRAM will be used as program full_message memory (including heap and stack).
   * @param  None
   * @retval None
   */
@@ -454,7 +454,7 @@ void SystemInit_ExtMemCtl(void)
   * @brief  Setup the external memory controller.
   *         Called in startup_stm32f4xx.s before jump to main.
   *         This function configures the external memories (SRAM/SDRAM)
-  *         This SRAM/SDRAM will be used as program data memory (including heap and stack).
+  *         This SRAM/SDRAM will be used as program full_message memory (including heap and stack).
   * @param  None
   * @retval None
   */

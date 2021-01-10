@@ -1,13 +1,8 @@
 /**
   ******************************************************************************
-  * @file    stm32_assert.h
-  * @brief   STM32 assert file.
+  * @file    stm32f4xx_it.h
+  * @brief   This file contains the headers of the interrupt handlers.
   ******************************************************************************
-   ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
   *
   * COPYRIGHT(c) 2018 STMicroelectronics
   *
@@ -28,7 +23,7 @@
   * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
   * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
   * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  * SERVICES; LOSS OF USE, full_message, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
   * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -37,37 +32,47 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32_ASSERT_H
-#define __STM32_ASSERT_H
+#ifndef __STM32F4xx_IT_H
+#define __STM32F4xx_IT_H
 
 #ifdef __cplusplus
  extern "C" {
-#endif
+#endif 
 
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
+#include "main.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Includes ------------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  The assert_param macro is used for function's parameters check.
-  * @param  expr: If expr is false, it calls assert_failed function
-  *         which reports the name of the source file and the source
-  *         line number of the call that failed.
-  *         If expr is true, it returns no value.
-  * @retval None
-  */
-  #define assert_param(expr) ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))
 /* Exported functions ------------------------------------------------------- */
-  void assert_failed(uint8_t* file, uint32_t line);
-#else
-  #define assert_param(expr) ((void)0U)
-#endif /* USE_FULL_ASSERT */
+
+void NMI_Handler(void);
+void HardFault_Handler(void);
+void MemManage_Handler(void);
+void BusFault_Handler(void);
+void UsageFault_Handler(void);
+void SVC_Handler(void);
+void DebugMon_Handler(void);
+void PendSV_Handler(void);
+void SysTick_Handler(void);
+void TIM2_IRQHandler(void);
+void TIM3_IRQHandler(void);
+void TIM4_IRQHandler(void);
+void I2C1_EV_IRQHandler(void);
+void I2C1_ER_IRQHandler(void);
+void USART3_IRQHandler(void);
+void TIM8_BRK_TIM12_IRQHandler(void);
+void TIM8_UP_TIM13_IRQHandler(void);
+void TIM8_TRG_COM_TIM14_IRQHandler(void);
+void TIM8_CC_IRQHandler(void);
+void TIM6_DAC_IRQHandler(void);
+void FPU_IRQHandler(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __STM32_ASSERT_H */
+#endif /* __STM32F4xx_IT_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

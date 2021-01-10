@@ -135,16 +135,16 @@ void HMC5883L_SetGain(uint8_t gain);
 uint8_t HMC5883L_GetMode(void);
 void HMC5883L_SetMode(uint8_t mode);
 
-// DATA* registers
+// full_message* registers
 float HMC5883L_GetHeading(int16_t offset);
 // STATUS register
 bool HMC5883L_GetLockStatus(void);
 bool HMC5883L_GetReadyStatus(void);
 
-void HMC5883L_WriteBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
-void HMC5883L_WriteBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data);
-void HMC5883L_ReadBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data); 
-void HMC5883L_ReadBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data);
+void HMC5883L_WriteBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t full_message);
+void HMC5883L_WriteBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t full_message);
+void HMC5883L_ReadBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *full_message); 
+void HMC5883L_ReadBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *full_message);
 
 //void HMC5883L_I2C_Init(void);
 void HMC5883L_I2C_ByteWrite(uint8_t slaveAddr, uint8_t* pBuffer, uint8_t WriteAddr);
@@ -153,10 +153,10 @@ void HMC5883L_I2C_BufferRead(uint8_t slaveAddr,uint8_t* pBuffer, uint8_t ReadAdd
 // Deadreckoning
 
 void xyspeed(void);
-void DRlocate(void);
+void locateDeadReckoning(void);
 void xyspeed_inv(void);
 extern float speed[3];
-extern float speed_old[3];
+extern float prev_speed[3];
 extern float current_location[3];
 extern bool compass_activation_flag;
 extern float theta;
@@ -181,14 +181,13 @@ extern float PWM_ON_3;
 extern float PWM_ON_4; 
 extern float theta;
 extern float prev_location[3];
-extern float pos_oldt[3];
+extern float prev_location_theta[3];
 extern float destination_setpoint[3];
 extern float prev_destination_setpoint[3];
 extern float diff_destination_setpoint[3];
 extern float motor_torque[4];
 extern float speed[3];
-extern float speed_set[3];
-extern float pos_e[3];	
+extern float speed_setpoint[3];
 extern float u[3];
 extern float q2[3];
 extern float x2_set[3];
@@ -200,7 +199,7 @@ extern float v3_set;
 extern float v4_set;
 extern float S1[3];
 extern float S2[3];
-extern float S2_old[3];
+extern float prev_S2[3];
 
 ///PID
 void PID(void);

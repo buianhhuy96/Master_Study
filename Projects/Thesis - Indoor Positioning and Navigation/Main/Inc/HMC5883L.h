@@ -99,16 +99,16 @@ void HMC5883L_SetGain(uint8_t gain);
 uint8_t HMC5883L_GetMode(void);
 void HMC5883L_SetMode(uint8_t mode);
 
-// DATA* registers
+// full_message* registers
 void HMC5883L_GetHeading(int16_t* Mag);
 // STATUS register
 bool HMC5883L_GetLockStatus(void);
 bool HMC5883L_GetReadyStatus(void);
 
-void HMC5883L_WriteBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
-void HMC5883L_WriteBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data);
-void HMC5883L_ReadBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data); 
-void HMC5883L_ReadBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data);
+void HMC5883L_WriteBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t full_message);
+void HMC5883L_WriteBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t full_message);
+void HMC5883L_ReadBits(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *full_message); 
+void HMC5883L_ReadBit(uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *full_message);
 
 //void HMC5883L_I2C_Init(void);
 void HMC5883L_I2C_ByteWrite(uint8_t slaveAddr, uint8_t* pBuffer, uint8_t WriteAddr);

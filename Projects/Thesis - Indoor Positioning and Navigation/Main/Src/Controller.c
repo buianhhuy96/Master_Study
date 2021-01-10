@@ -96,17 +96,17 @@ void Controller(void)
 	prev_location[1]= q2[1]*T*T/2 + 2*prev_location[1] - prev2_location[1];
 	prev_location[2]= q2[2]*T*T/2 + 2*prev_location[2] - prev2_location[2];
 	
-	speed_set[0] = (prev_location[0] - prev2_location[0])/T;
-	speed_set[1] = (prev_location[1] - prev2_location[1])/T;
-	speed_set[2] = (prev_location[2] - prev2_location[2])/T;
+	speed_setpoint[0] = (prev_location[0] - prev2_location[0])/T;
+	speed_setpoint[1] = (prev_location[1] - prev2_location[1])/T;
+	speed_setpoint[2] = (prev_location[2] - prev2_location[2])/T;
 	
 	prev2_location[0]=prev_location[0];
 	prev2_location[1]=prev_location[1];
 	prev2_location[2]=prev_location[2];
 		
-	S2_old[0]=S2[0];
-	S2_old[1]=S2[1];
-	S2_old[2]=S2[2];
+	prev_S2[0]=S2[0];
+	prev_S2[1]=S2[1];
+	prev_S2[2]=S2[2];
 	
 
 
