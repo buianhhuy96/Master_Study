@@ -1,4 +1,13 @@
-﻿#pragma once
+﻿/****************** Realtime video captures of XO game  ***********************
+Project: Indoor Positioning and Navigation of Omni-wheel Robot
+Author: Anh Huy Bui - 1411408
+University: Bach Khoa Ho Chi Minh
+Date: June - 2018
+Description: 
+- GUI to handle form design and receiving data (location of robot) every timer tick
+******************************************************************************/
+
+#pragma once
 #include <iostream>   // std::cout
 #include <string>    
 #include <msclr\marshal_cppstd.h>
@@ -17,9 +26,9 @@ std::string Setpoint_string;
 std::string ReadBuffer;
 std::string ReadBuffer_temp;
 int Write_ready;
-long pos_0;
-long pos_1;
-long pos_2;
+long current_location_x;
+long current_location_y;
+long current_location_t;
 int pos_set_0;
 int pos_set_1;
 int pos_set_2;
@@ -32,16 +41,7 @@ extern int set_x;
 extern int set_y;
 namespace Project1 {
 	
-	int check;
-	std::string connected = "!";
-	std::size_t char_pos_x;
-	std::size_t char_pos_y;
-	std::size_t char_pos_t;
-	std::string::size_type sz;
-	std::string x = "x";
-	std::string y = "y";
-	std::string t = "t";
-	int Message_check;
+	
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
@@ -51,7 +51,17 @@ namespace Project1 {
 	using namespace System::IO::Ports;
 	using namespace msclr::interop;
 
-
+	int check;
+	std::string connected = "!";
+	std::size_t char_location_x;
+	std::size_t char_location_y;
+	std::size_t char_location_t;
+	std::string::size_type sz;
+	std::string x = "x";
+	std::string y = "y";
+	std::string t = "t";
+	int Message_check;
+	
 	/// <summary>
 	/// Summary for MyForm
 	/// </summary>
@@ -369,10 +379,7 @@ namespace Project1 {
 	private: System::Void Pb_Connect_Click(System::Object^  sender, System::EventArgs^  e) {
 		if (!this->serialPort1->IsOpen) {
 			this->serialPort1->PortName = this->cb_SecCom->Text;
-			//this->textBox1->Text=this->comboBox1->Text;
 			this->serialPort1->BaudRate = Int32::Parse((this->txt_Baud->Text));
-			//this->textBox1->Text=this->comboBox2->Text;
-			//this->serialPort1->Parity = Parity::Even;
 			try
 			{
 				this->serialPort1->Open();
@@ -384,9 +391,7 @@ namespace Project1 {
 				try
 				{
 					this->serialPort1->PortName = this->cb_SecCom->Text;
-					//this->textBox1->Text=this->comboBox1->Text;
 					this->serialPort1->BaudRate = Int32::Parse((this->txt_Baud->Text));
-					//this->serialPort1->Parity = Parity::Even;
 					this->serialPort1->Open();
 					this->Status->Text = "Connecting";
 				}
@@ -412,7 +417,8 @@ namespace Project1 {
 	private: System::Void Send_Click(System::Object^  sender, System::EventArgs^  e) {
 		if (this->serialPort1->IsOpen) {
 			if ((this->Setpoint_x->Text != "") && (this->Setpoint_y->Text != "")) {
-				System::String^ Setpoint = ("x" + "+" + this->Setpoint_x->Text +"y"+ "+" + this->Setpoint_y->Text+"t"+"+"+this->Setpoint_t->Text+"#");
+				System::String^ Setpoint = 
+					("x" + "+" + this->Setpoint_x->Text +"y"+ "+" + this->Setpoint_y->Text+"t"+"+"+this->Setpoint_t->Text+"#");
 				this->serialPort1->Write(Setpoint);
 			}
 		}
@@ -431,25 +437,21 @@ namespace Project1 {
 			this->Setpoint_t->Text = "000";
 			if ((this->serialPort1->IsOpen) && (WriteBuffer->Length == 16)){ 
 				this->serialPort1->Write(WriteBuffer);
-
- 	 				//Write_ready = 0;
 			}
 		}
-
-
  		if (Message_check == 1) {
 
-			char_pos_x = ReadBuffer.find(x);
-			if (char_pos_x <= ReadBuffer.length())
+			char_location_x = ReadBuffer.find(x);
+			if (char_location_x <= ReadBuffer.length())
 			{
 				try
 				{
-					ReadBuffer_temp = ReadBuffer.substr(char_pos_x + 1, 4);
+					ReadBuffer_temp = ReadBuffer.substr(char_location_x + 1, 4);
 					std::istringstream iss(ReadBuffer_temp);
 					long num;
 					if (!(iss >> num).fail()) {
 						try {
-							pos_0 = std::stol(ReadBuffer_temp, 0);
+							current_location_x = std::stol(ReadBuffer_temp, 0);
 							draw++;
 						}
 						catch (std::invalid_argument)
@@ -460,16 +462,16 @@ namespace Project1 {
 				}
 				catch(std::out_of_range& exception){}
 			}
-			char_pos_y = ReadBuffer.find(y);
-			if (char_pos_y <= ReadBuffer.length())
+			char_location_y = ReadBuffer.find(y);
+			if (char_location_y <= ReadBuffer.length())
 			{
 				try {
-					ReadBuffer_temp = ReadBuffer.substr(char_pos_y + 1, 4);
+					ReadBuffer_temp = ReadBuffer.substr(char_location_y + 1, 4);
 					std::istringstream iss(ReadBuffer_temp);
 					long num;
 					if (!(iss >> num).fail()) {
 						try {
-							pos_1 = std::stol(ReadBuffer_temp, 0);
+							current_location_y = std::stol(ReadBuffer_temp, 0);
 							draw++;
 						}
 						catch (std::invalid_argument)
@@ -480,16 +482,16 @@ namespace Project1 {
 				}
 				catch (std::out_of_range& exception) {}
 			}
-			char_pos_t = ReadBuffer.find(t);
-			if (char_pos_t <= ReadBuffer.length())
+			char_location_t = ReadBuffer.find(t);
+			if (char_location_t <= ReadBuffer.length())
 			{
 				try {
-					ReadBuffer_temp = ReadBuffer.substr(char_pos_t + 1, 4);
+					ReadBuffer_temp = ReadBuffer.substr(char_location_t + 1, 4);
 					std::istringstream iss(ReadBuffer_temp);
 					long num;
 					if (!(iss >> num).fail()) {
 						try {
-							pos_2 = std::stol(ReadBuffer_temp, 0);
+							current_location_t = std::stol(ReadBuffer_temp, 0);
 							draw++;
 						}
 						catch (std::invalid_argument)
@@ -500,11 +502,11 @@ namespace Project1 {
 				}
 				catch (std::out_of_range& exception) {}
 			}
-			Point2f point_2d = Point2f((float)(pos_0*2 + img.cols/2), (float)(img.rows/2 - 2*pos_1));
+			Point2f point_2d = Point2f((float)(current_location_x*2 + img.cols/2), (float)(img.rows/2 - 2*current_location_y));
 			if (1) {//draw == 3) {
 				circle(img, point_2d, 3, Scalar(0, 0, 255), FILLED, LINE_8);
 				circle(img_temp, point_2d, 3, Scalar(0, 0, 255), FILLED, LINE_8);
-				std::string position = "Position: {" + std::to_string(pos_0) + ", " + std::to_string(pos_1) + ", " + std::to_string(pos_2/100)+"."+std::to_string((pos_2 %100)/10)+ std::to_string(pos_2 %10) + "}";
+				std::string position = "Position: {" + std::to_string(current_location_x) + ", " + std::to_string(current_location_y) + ", " + std::to_string(current_location_t/100)+"."+std::to_string((current_location_t %100)/10)+ std::to_string(current_location_t %10) + "}";
 				img_temp.copyTo(img_temp_2);
 				putText(img_temp_2, position, Point2f(30, 710), FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0, 0, 255), 0.2, LINE_AA);
 			}
@@ -563,44 +565,21 @@ namespace Project1 {
 		os = chars;
 		Marshal::FreeHGlobal(IntPtr((void*)chars));
 	}
-			 //private: delegate void MouseCallBackFunc(int event, int x, int y, int flags, void* userdata);
-			 //private: void CallBackFunc(int event, int x, int y, int flags, void* userdata) {
-			 //	if (this->Status->InvokeRequired) {
-			 //		array<Object^>^Mouse = { event, x , y, flags, userdata };
-			 //		this->Invoke(gcnew MouseCallBackFunc(this, &MyForm::CallBackFunc), Mouse);
-			 //	}
-			 //	else {
-			 //		if (event == EVENT_LBUTTONDOWN)
-			 //		{
-			 //			Console::Write("Left");
-			 //			// cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-			 //		}
-			 //		else if (event == EVENT_RBUTTONDOWN)
-			 //		{
-			 //			Console::Write("right");
-			 //			//	 cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-			 //		}
-			 //		else if (event == EVENT_MBUTTONDOWN)
-			 //		{
-			 //			// cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-			 //		}
-			 //	}
-			 //}
 
 	private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e) {
 	}
 	private: System::Void label1_Click(System::Object^  sender, System::EventArgs^  e) {
 	}
-private: System::Void Setpoint_y_TextChanged(System::Object^  sender, System::EventArgs^  e) {
-}
-private: System::Void cb_SecCom_SelectedIndexChanged(System::Object^  sender, System::EventArgs^  e) {
-}
-private: System::Void groupBox1_Enter(System::Object^  sender, System::EventArgs^  e) {
-}
-private: System::Void Status_TextChanged(System::Object^  sender, System::EventArgs^  e) {
-	if (this->Status->Text == "Connected") {
-		this->Send->Enabled = true;
-		this->Status->ForeColor = System::Drawing::Color::Green;
+	private: System::Void Setpoint_y_TextChanged(System::Object^  sender, System::EventArgs^  e) {
+	}
+	private: System::Void cb_SecCom_SelectedIndexChanged(System::Object^  sender, System::EventArgs^  e) {
+	}
+	private: System::Void groupBox1_Enter(System::Object^  sender, System::EventArgs^  e) {
+	}
+	private: System::Void Status_TextChanged(System::Object^  sender, System::EventArgs^  e) {
+		if (this->Status->Text == "Connected") {
+			this->Send->Enabled = true;
+			this->Status->ForeColor = System::Drawing::Color::Green;
 		}
 		
 	}

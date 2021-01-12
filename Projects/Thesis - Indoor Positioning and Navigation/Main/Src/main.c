@@ -1,3 +1,28 @@
+/****************** Realtime video captures of XO game  ***********************
+Project: Indoor Positioning and Navigation of Omni-wheel Robot
+Author: Anh Huy Bui - 1411408
+University: Bach Khoa Ho Chi Minh
+Date: June - 2018
+Description: 
+- Components: 
+	+ Model of 4-omni-wheel robot.
+	+ STM32F4 kit (ARM Cortex).
+	+ HMC5883L Compass sensor.
+	+ HC-06 Bluetooth module.
+	+ H-Bridge module.
+- Details:
+	+ Locating robot using relative positioning system: Dead Reckoning.
+	+ Transfer robot location to GUI and send back destination.
+	+ Control robot movement to reach destination: Dynamic Surface Control.
+- Program:
+	+ Main program flow is divided into 4 different tasks/stages.
+		1. Get data of destination from central controller (GUI).
+		2. Read data from compass sensor => Calculate robot angle.
+		3. Read robot speed with input capture on encoder => Current robot location.
+		4. Calculate voltage to supply 4 motors to control robot movement using DSC.
+	+ Additional features: Kalman filtering, GUI (OpenCV and Winform with C++).	
+******************************************************************************/
+
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h" 
