@@ -36,14 +36,13 @@ wolft_lowpass= imfilter(wolft, filterB, 'replicate');
 
 % Replace the zero image below with a high-pass filtered version of 'wolft'
 %%--your-code-starts-here--%%
-
-wolft_highpass=wolft-wolft_lowpass;  % replace me
+wolft_highpass=wolft-wolft_lowpass;  
 %%--your-code-ends-here--%%
 
 % Replace also the zero image below with the correct hybrid image using
 % your filtered results
 %%--your-code-starts-here--%%
-hybrid_image = man_lowpass + wolft_highpass;  % replace me
+hybrid_image = man_lowpass + wolft_highpass; 
 %%--your-code-ends-here--%%
 
 % Try looking at the results from different distances.
@@ -77,10 +76,10 @@ title('Hybrid Image');
 %  for wolf/man and their filtered results using fft2 and fftshift
 
 %%--your-code-starts-here--%%
-F_man=fftshift(fft2(man));  % replace me
-F_man_lowpass=fftshift(fft2(man_lowpass));  % replace me
-F_wolft=fftshift(fft2(wolft));  % replace me
-F_wolft_highpass=fftshift(fft2(wolft_highpass));  % replace me
+F_man           =fftshift(fft2(man));  
+F_man_lowpass   =fftshift(fft2(man_lowpass)); 
+F_wolft         =fftshift(fft2(wolft));
+F_wolft_highpass=fftshift(fft2(wolft_highpass));
 %%--your-code-ends-here--%%
 
 figure; clf;

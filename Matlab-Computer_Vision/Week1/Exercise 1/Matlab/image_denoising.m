@@ -25,10 +25,8 @@ gflt_imng=imfilter(imng,g);
 [U, S, V] = svd(g);
 hfilter = U(:,1)*sqrt(S(1,1));
 vfilter = V(:,1)*sqrt(S(1,1));
-gflt_imns = conv2(rot90(hfilter,2)', ...
-                    conv2(rot90(vfilter,2),imns));
-gflt_imng =  conv2(rot90(hfilter,2)', ...
-                    conv2(rot90(vfilter,2),imng));
+gflt_imns = conv2(rot90(hfilter,2)', conv2(rot90(vfilter,2),imns));
+gflt_imng = conv2(rot90(hfilter,2)', conv2(rot90(vfilter,2),imng));
 %%--your-code-ends-here--%%
 
 
@@ -38,8 +36,9 @@ gflt_imng =  conv2(rot90(hfilter,2)', ...
 %  Use the median_filter.m function
 
 %%--your-code-starts-here--%%
-medflt_imns=median_filter(imns,5);%zeros(size(imns));  % replace me
-medflt_imng=median_filter(imng,5);  % replace me
+filter_size=5;
+medflt_imns=median_filter(imns,filter_size);
+medflt_imng=median_filter(imng,filter_size);  
 %%--your-code-ends-here--%%
 
 %% Apply bilateral filter to each image with window size 11.
