@@ -66,9 +66,9 @@ figure(4); clf; vl_imarraysc(y_pad); colormap gray; title('Padding');
 %% Manually design a filter
  
 %%% Your code starts here %%%
-w2 = [0  0  0;
-      0  1  0;
-      0  0  0];
+w2 = [-1  -1  -1;
+      -1  8  -1;
+      -1  -1  -1];
 %%% Your code stops here %%%
 
 w2 = repmat(w2, [1, 1, 3]);
@@ -156,7 +156,7 @@ fig = figure('Name','test', 'Position', [0,0,1000,600]);
 
 % Pre-processing
 %%% Your code starts here %%%
-
+im = imsmooth(im,3);
 %%% Your code ends here %%%
 
 
