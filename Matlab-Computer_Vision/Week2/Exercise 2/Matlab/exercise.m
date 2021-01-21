@@ -29,7 +29,7 @@ figure(1) ; clf ; imagesc(x) ;
 %%% Your code starts here %%%
 [m, n, p] = size(x);
 fprintf('\n Size of x: [%d %d %d] \n', m,n,p);
-% The 3rd dimension of x represents channel of x. 
+% The 3rd dimension of x represents feature channel of x. 
 % In this case, x is an RGB image. Therefore p, 3rd dimension, is 3
 %%% Your code stops here %%%
 
@@ -50,6 +50,16 @@ figure(2) ; clf ; vl_imarraysc(y) ; colormap gray ;
 %            What is the size of the output y, and how is this related to
 %            x and w?
 
+% Answer: 
+%        Because w matrices are randomly created every run, but they all 
+%        follow Guassian distribution so there will be some difference but
+%        not much. 
+%        Because y is convolution (without padding) of w, kernels, 
+%        and x, the image with size m * n, size of y will have size of x 
+%        with subtraction of 2*floor(sizeof(w)/2), which is 4. Additionally, we
+%        apply 10 kernels in this case, which result in 10 y matrices, then
+%        concatenated as the 3rd dimension. Final result of y will have size of
+%        (m-4) * (n-4) * 10
 
 %% Applying downsampling and padding
 % Try again, downsampling the output
@@ -62,13 +72,17 @@ figure(4); clf; vl_imarraysc(y_pad); colormap gray; title('Padding');
 
 % Your task: How does the size of y_pad differ from previous y? Can you explain why?
 
+% Answer: 
+%       y_pad is convolution matrix of image x and kernel w WITH padding 2 
+%       in all direction (TOP, BOTTOM, LEFT, RIGHT), which is 4 in both 
+%       dimensions. Thererfore, size of y_pad is the same with x.
 
 %% Manually design a filter
  
 %%% Your code starts here %%%
-w2 = [-1  -1  -1;
-      -1  8  -1;
-      -1  -1  -1];
+w2 = [0  -1  0;
+      -1  4  -1;
+      0  -1  0];
 %%% Your code stops here %%%
 
 w2 = repmat(w2, [1, 1, 3]);
@@ -87,7 +101,13 @@ subplot(1,3,3) ; imagesc(-abs(y_lap)) ; title('- abs(filter output)');
 %            Why is the repmat function needed here?
 %            Take a look at the result. 
 %            What kind of a features does our filter extract?
-      
+ 
+% Answer:
+%       Because x has 3 channels, we want to apply w2 into all 3 channels 
+%       of x, w2 must be a 3D matrix with value 3 in third dimension.
+%       repmat helps duplicate w2 matrix and concatenates all copies, 3 in
+%       this case, along 3rd dimension.
+
 
 %% Non-linear gating (ReLU)
 
@@ -107,6 +127,13 @@ subplot(1,2,2); vl_imarraysc(z); title('ReLU output');
 
 % Your task: Some of the functions in a CNN should be non-linear. Why?
 
+% Answer:
+%       In real life senarios, data are not always linear separatable, 
+%       Applying only linear function does nothing but multiplying output 
+%       of previous layer with weights. Instead, a non-linear separator 
+%       will do better with non-linear data, be able to detect the complexity 
+%       of it. 
+
 %% Pooling
 y = vl_nnpool(x, 15, 'Stride', 4) ;  % max pooling with a square filter of size 15
 figure(7) ; clf ;
@@ -117,6 +144,14 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %            What is the effect of max-pooling? 
 %            What does the 'Stride' parameter do?
 
+% Answer:
+%       max-pooling image has the size of 1/4 compared to original image.
+%       And it keeps the pixels which are brightest in specific regions.
+%       Effect of max-pooling:
+%       Max-pooling extracts the pixel with maximum value in the processing
+%       region of the image. 'Stride' parameter allows downsampling the
+%       image with factor 4. This results in reduction of computational
+%       cost, number of parameters.
 
 %% Implementing a small CNN and optimizing with SGD
 %  We will train a CNN to extract blob-like structures from an image.
@@ -128,7 +163,16 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %    thresholds are ignored.
 %    How would the histograms set in an ideal case?
 %    What is the result here compared to the ideal case?
-
+    
+% Answer:
+%       Ideal histogram would be better to present in bar chart, in which
+%       there would be only 1 green bar for the value higher than 1, the right threshold,
+%       and 1 red bar for the value lower than or equal 0, the left threshold.
+%       This is because green bar represents only value at exact pixels 
+%       which are blobs,so as red bar with not-blob pixels.
+%
+%       It depends. Each run results in a little bit different than others.
+%       But in general, most run have red and green line overlapping.
 
 % 2. Train the tiny CNN by first smoothing the input image and subtracting 
 %    the median value in preprocessing. Use the imsmooth function 
@@ -143,6 +187,19 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %    How does this differ from the previous with the same learning rate?
 %    What is the benefit of using momentum?
 
+% Answer:
+%       Too high learning rate results in a really quick changes in
+%       weights. This leads to the weights bouncing around the local/ global
+%       minimum point (derivative of E equal 0), and almost no chance to 
+%       reach the point.
+
+%       with momentum as 0, in some cases, error value stuck at a certain
+%       level while in other cases, there is not much difference.
+%       Sometimes local minimum points are not the global minimum, and
+%       without momentum, it can easily reach and stays at a local minimum
+%       which is not the best result. Momentum in this case adds a certain
+%       value to weights which helps them go pass the minimum point in case it is
+%       not the global ones. 
 
 
 % Load an image
@@ -157,6 +214,7 @@ fig = figure('Name','test', 'Position', [0,0,1000,600]);
 % Pre-processing
 %%% Your code starts here %%%
 im = imsmooth(im,3);
+im = im - median(im(:));
 %%% Your code ends here %%%
 
 
