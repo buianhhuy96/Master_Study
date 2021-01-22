@@ -25,12 +25,14 @@ figure(1) ; clf ; imagesc(x) ;
 
 % Your task: Use MATLAB's 'size' function to display the size of x.
 %            What is the size of third dimension and why?
+% Answer:
+%       The 3rd dimension of x represents feature channels of x. 
+%       In this case, x is an RGB image. Therefore 3rd dimension of x is 3
 
 %%% Your code starts here %%%
 [m, n, p] = size(x);
-fprintf('\n Size of x: [%d %d %d] \n', m,n,p);
-% The 3rd dimension of x represents feature channel of x. 
-% In this case, x is an RGB image. Therefore p, 3rd dimension, is 3
+fprintf('Size of x: [%d %d %d] \n', m,n,p);
+
 %%% Your code stops here %%%
 
 
@@ -56,10 +58,10 @@ figure(2) ; clf ; vl_imarraysc(y) ; colormap gray ;
 %        not much. 
 %        Because y is convolution (without padding) of w, kernels, 
 %        and x, the image with size m * n, size of y will have size of x 
-%        with subtraction of 2*floor(sizeof(w)/2), which is 4. Additionally, we
-%        apply 10 kernels in this case, which result in 10 y matrices, then
-%        concatenated as the 3rd dimension. Final result of y will have size of
-%        (m-4) * (n-4) * 10
+%        with subtraction of 2*floor(sizeof(w)/2), which is 4. Additionally,
+%        10 filters are used in this case, which results in 10 y matrices, then
+%        concatenated along the 3rd dimension. Final result of y will have 
+%        size of (m-4) * (n-4) * 10
 
 %% Applying downsampling and padding
 % Try again, downsampling the output
@@ -75,7 +77,8 @@ figure(4); clf; vl_imarraysc(y_pad); colormap gray; title('Padding');
 % Answer: 
 %       y_pad is convolution matrix of image x and kernel w WITH padding 2 
 %       in all direction (TOP, BOTTOM, LEFT, RIGHT), which is 4 in both 
-%       dimensions. Thererfore, size of y_pad is the same with x.
+%       dimensions. Thererfore, size of y_pad is larger than y's  
+%       and the same with x's.
 
 %% Manually design a filter
  
@@ -105,8 +108,12 @@ subplot(1,3,3) ; imagesc(-abs(y_lap)) ; title('- abs(filter output)');
 % Answer:
 %       Because x has 3 channels, we want to apply w2 into all 3 channels 
 %       of x, w2 must be a 3D matrix with value 3 in third dimension.
-%       repmat helps duplicate w2 matrix and concatenates all copies, 3 in
-%       this case, along 3rd dimension.
+%       repmat helps duplicate w2 matrix and concatenates all copies, in
+%       this case, 3 copies along 3rd dimension. Final size is 3 * 3 * 3
+
+%		The filter enhances difference between center pixel and neighbor pixels.
+% 		Therefore, this filter can be considered to be a high pass filter or
+%		edge detector.
 
 
 %% Non-linear gating (ReLU)
@@ -131,8 +138,8 @@ subplot(1,2,2); vl_imarraysc(z); title('ReLU output');
 %       In real life senarios, data are not always linear separatable, 
 %       Applying only linear function does nothing but multiplying output 
 %       of previous layer with weights. Instead, a non-linear separator 
-%       will do better with non-linear data, be able to detect the complexity 
-%       of it. 
+%       will do better with non-linear data and be able to detect the complexity 
+%       of them. 
 
 %% Pooling
 y = vl_nnpool(x, 15, 'Stride', 4) ;  % max pooling with a square filter of size 15
@@ -147,10 +154,14 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 % Answer:
 %       max-pooling image has the size of 1/4 compared to original image.
 %       And it keeps the pixels which are brightest in specific regions.
+%
 %       Effect of max-pooling:
-%       Max-pooling extracts the pixel with maximum value in the processing
-%       region of the image. 'Stride' parameter allows downsampling the
-%       image with factor 4. This results in reduction of computational
+%       Max-pooling get the pixel with maximum value in the processing
+%       region of the image. This is used to exact features of data and 
+%		reduce cost.
+%
+%		'Stride' parameter allows downsampling the
+%       image with a factor. This results in reduction of computational
 %       cost, number of parameters.
 
 %% Implementing a small CNN and optimizing with SGD
@@ -165,14 +176,17 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %    What is the result here compared to the ideal case?
     
 % Answer:
-%       Ideal histogram would be better to present in bar chart, in which
-%       there would be only 1 green bar for the value higher than 1, the right threshold,
-%       and 1 red bar for the value lower than or equal 0, the left threshold.
+%       I will descibe an ideal histogram in a bar chart, in which
+%       there would be only 
+%       1 green bar (pos) with height equal 1 locates on the right of threshold,
+%       and 
+%		1 red bar (neg) with height equal 1 locates on the left threshold.
 %       This is because green bar represents only value at exact pixels 
-%       which are blobs,so as red bar with not-blob pixels.
+%       which, in ideal case, are blobs, so as red bar with not-blob pixels.
 %
-%       It depends. Each run results in a little bit different than others.
+%       Each run results in a little bit different than others.
 %       But in general, most run have red and green line overlapping.
+%		Red line are often horizontal, and lies near 0.
 
 % 2. Train the tiny CNN by first smoothing the input image and subtracting 
 %    the median value in preprocessing. Use the imsmooth function 
@@ -180,6 +194,7 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %    The learned filter should resemble the discretisation of a well-known differential operator. 
 %    Which one? 
 
+% Answer: Laplacian of Gaussian
 
 % 3. Try doubling the learning rate.
 %    What is the effect of having too high of a learning rate?
@@ -188,17 +203,17 @@ subplot(1,2,2); imagesc(y); title('Max-pooling');
 %    What is the benefit of using momentum?
 
 % Answer:
-%       Too high learning rate results in a really quick changes in
-%       weights. This leads to the weights bouncing around the local/ global
-%       minimum point (derivative of E equal 0), and almost no chance to 
-%       reach the point.
-
-%       with momentum as 0, in some cases, error value stuck at a certain
-%       level while in other cases, there is not much difference.
-%       Sometimes local minimum points are not the global minimum, and
-%       without momentum, it can easily reach and stays at a local minimum
+%       Too high learning rate results in really quick changes in
+%       weights. However, this leads to the weights bouncing around 	
+%       minimum points (derivative of E equal 0), and hardly converges.
+%
+%       With momentum as 0, the output are more stable. But in some cases, 
+%       error converges at a higher value. Some other cases, there is not much difference.
+%       
+%		Sometimes local minimum points are not the global minimum, and
+%       without momentum, it can easily reach and converge at a local minimum
 %       which is not the best result. Momentum in this case adds a certain
-%       value to weights which helps them go pass the minimum point in case it is
+%       value to weights which helps them go pass the local minimum point in case it is
 %       not the global ones. 
 
 
