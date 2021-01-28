@@ -12,8 +12,8 @@ import os
 # Tiny YOLO model weights are already in the exercise folder.
 
 cwd = os.getcwd()
-weights = os.path.join(cwd, "yolov3.weights")
-model_dir = os.path.join(cwd, "cfg/yolov3.cfg")
+weights = os.path.join(cwd, "yolov3-tiny.weights")
+model_dir = os.path.join(cwd, "cfg/yolov3-tiny.cfg")
 
 net = cv2.dnn.readNet(weights, model_dir)
 
@@ -53,7 +53,7 @@ while True:
     # Showing informations on the screen
     class_ids = []
     confidences = []
-    boxes = np.array([])
+    boxes = []
     for out in outs:
         for detection in out:
             #detection-array has the bound
@@ -68,8 +68,7 @@ while True:
             ##your-code-ends-here
             
             if confidence > 0.5:
-                pass ##-REMOVE-THIS-LINE-ONCE-YOU-HAVE-EVERYTHING-READY-##
-                
+
                 # Object detected
                 # Examine the detection array. Its first four arguments include information 
                 # about the bounding box limits, but the problem is that these values are between
@@ -101,14 +100,12 @@ while True:
                 # All of these lists have already been declared above.
                 
                 ##-your-code-starts-here-##
-                #np.concatenate((boxes,([x,y,w,h])),axis=1)
-                boxes = np.vstack([boxes,([x,y,w,h])])\
-                            if boxes.size else np.array([x,y,w,h])
-                confidences.append(confidence) 
+                boxes.append([x,y,w,h])
+                confidences.append(float(confidence))
+                class_ids.append(class_id)
                 ##-your-code-ends-here-##          
                 
 
-    boxes=boxes.tolist()
     indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.8, 0.3)
 
     for i in range(len(boxes)):
@@ -121,7 +118,9 @@ while True:
             # using cv2.rectangle()-function and x, y, w, h.
             
             ##-your-code-starts-here-##
-            
+            x1 = (x, y)
+            x2 = (x+w, y+h)
+            frame = cv2.rectangle(frame, x1, x2, color, 2)
             ##-your-code-ends-here-##
             
             cv2.putText(frame, label + " " + str(round(confidence, 2)), (x, y + 30), font, 3, color, 3)
