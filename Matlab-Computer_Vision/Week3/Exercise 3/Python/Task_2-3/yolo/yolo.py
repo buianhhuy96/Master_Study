@@ -12,10 +12,13 @@ import os
 # Tiny YOLO model weights are already in the exercise folder.
 
 cwd = os.getcwd()
-weights = os.path.join(cwd, "yolov3-tiny.weights")
-model_dir = os.path.join(cwd, "cfg/yolov3-tiny.cfg")
+weights = os.path.join(cwd, "yolov3.weights")
+model_dir = os.path.join(cwd, "cfg/yolov3.cfg")
 
 net = cv2.dnn.readNet(weights, model_dir)
+
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
 
 classes = []
 with open("coco.names", "r") as f:
