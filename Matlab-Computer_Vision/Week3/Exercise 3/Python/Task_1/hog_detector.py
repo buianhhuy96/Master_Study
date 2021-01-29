@@ -40,10 +40,10 @@ cap = cv2.VideoCapture("run.gif")
 
 
 ##--your-code-start-here--##
-scale = 1.02
-winStride = (4, 4)
+scale = 1.07
+winStride = (3, 3)
 padding = (8, 8)
-hitThreshold = 0.2
+hitThreshold = 0.0
 ##--your-code-ends-here--##
 
 
