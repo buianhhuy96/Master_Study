@@ -77,6 +77,33 @@ end
 % matches (i.e not ascending order as with SSD).
 
 %%-your-code-starts-here-%%
+% Compute the sum of squared differences (SSD) of pixels' intensities
+% for all pairs of patches from the two images
+NormalizedCrossCorrelation=zeros(n,m);
+meanA = mean(patchA,3);
+meanB = mean(patchB,3);
+for i=1:n
+    for j=1:m
+		diffA = patchA(:,:,i)-meanA(:,:);
+		diffB = patchB(:,:,j)-meanB(:,:);
+        NormalizedCrossCorrelation(i,j)=sum(sum((diffA.*diffB)))/ ...
+                            sqrt(sum(sum(((diffA.^2)))*sum(sum(diffB.^2))));
+    end
+end
+
+% Next, compute pairs of patches that are mutually nearest neighbors
+% according to the measure
+[ss2,ids2]=max(NormalizedCrossCorrelation,[],2);
+[ss1,ids1]=max(NormalizedCrossCorrelation,[],1);
+pairs=[];
+for k=1:n
+    if k==ids1(ids2(k))
+        pairs=[pairs;k ids2(k) ss2(k)];
+    end
+end
+
+% We sort the mutually nearest neighbors based on the score
+[sorted_ncc,id_ncc]=sort(pairs(:,3),1,'descend');
 
 %%-your-code-ends-here-%%
 

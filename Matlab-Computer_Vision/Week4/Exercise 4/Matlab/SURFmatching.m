@@ -74,31 +74,15 @@ distmat_sorted = sort(distmat, 2, 'ascend');  % each row sorted in ascending ord
 nndr=zeros(size(pairs,1),1);  % pre-allocate memory
 
 %%-your-code-starts-here-%%)
-
+for k=1:length(pairs)
+	nearest = distmat_sorted(pairs(k),1:2);
+    nndr(k) = nearest(1)/nearest(2);
+end
+[snnd,id_nndr]=sort(nndr,1,'ascend');
 %%-your-code-ends-here-%%
 
 % Visualize the 5 best matches 
 Nvis=5;
-
-fig1=figure;
-imshow([I1  I2]);hold on;
-title('The top 5 mutual nearest neighbors of SURF features according to NNDR');
-    
-t=[0:1:360]/180*pi;
-idlist=id_nndr;
-for k=1:Nvis
-    pid1=pairs(idlist(k),1);
-    pid2=pairs(idlist(k),2);
-    
-    loc1=vpts1_loc(pid1,:);
-    r1=6*vpts1_scale(pid1);
-    loc2=vpts2_loc(pid2,:);
-    r2=6*vpts2_scale(pid2);
-    
-    figure(fig1);
-    plot(loc1(1)+r1*cos(t),loc1(2)+r1*sin(t),'m-','LineWidth',3);
-    plot(loc2(1)+r2*cos(t)+size(I1,2),loc2(2)+r2*sin(t),'m-','LineWidth',3);
-    plot([loc1(1);loc2(1)+size(I1,2)],[loc1(2); loc2(2)],'c-');
-end
+ge
 
 % How many of the top 5 matches appear to be correct correspondences?
