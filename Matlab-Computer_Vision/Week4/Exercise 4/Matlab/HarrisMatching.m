@@ -117,5 +117,5 @@ for k=1:min(length(id_ncc), Nvis)
     l=id_ncc(k);
     plot(x1(pairs(l,1)),y1(pairs(l,1)),'mx');
     plot(x2(pairs(l,2))+size(I1,2),y2(pairs(l,2)),'mx');
-    plot([x1(pairs(l,1)); x2(pairs(l,2))+size(I1,2)],[y1(pairs(l,1)); y2(pairs(l,2))],'c-','LineWidth',1);
+    plot([x1(pairs(l,1)); x2(pairs(l,2))+size(I1,2)],[y1(pairs(l,1)); y2(pairs(l,2))],'c-','LineWidth',1, 'color', rand(1,3));
 end
