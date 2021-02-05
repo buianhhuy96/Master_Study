@@ -1,27 +1,18 @@
 #include "CornerDetector.h"
 #include <iostream>
 
-Corners::Corners(const cv::Mat& img) :
-	img_(img)
-{
-	scale_ = DEFAULT_SCALE;
-	ksize_ = DEFAULT_KSIZE;
-}
-
-Corners::Corners(const cv::Mat& img, 
-				 const float scale,
-				 const int ksize) :
-	img_(img), scale_(scale), ksize_(ksize)
+CornerDetector::CornerDetector(const float scale, const int ksize) :
+									scale_(scale), ksize_(ksize)
 {
 	if ((scale_ > MAX_SCALE) || (scale_ < MIN_SCALE))
 	{
 		std::cout << SCALE_INVALID_RANGE << std::endl;
 		scale_ = DEFAULT_SCALE;
-	} /* ((scale_ > MAX_SCALE) || (scale_ < MIN_SCALE)) */
+	} 
 	else
 	{
 		scale_ = scale;
-	}
+	} /* End of if((scale_ > MAX_SCALE) || (scale_ < MIN_SCALE)) */
 
 	if ((ksize_ > MAX_SCALE) || (ksize_ < MIN_SCALE))
 	{
@@ -31,15 +22,15 @@ Corners::Corners(const cv::Mat& img,
 	else
 	{
 		ksize_ = scale;
-	}
+	} /* End of if((ksize_ > MAX_SCALE) || (ksize_ < MIN_SCALE))) */
 }
 
-Corners::~Corners()
+CornerDetector::~CornerDetector(void)
 {
 
 }
 
-void Corners::set_scale(const float scale) 
+void CornerDetector::setScale(const float scale) 
 {
 	if ((scale <= MAX_SCALE) && (scale >= MIN_SCALE))
 	{
@@ -51,24 +42,37 @@ void Corners::set_scale(const float scale)
 	}
 }
 
-float Corners::get_scale() const
+float CornerDetector::getScale(void) const
 {
 	return scale_;
 }
 
-void Corners::set_ksize(const int ksize)
+void CornerDetector::setKsize(const int ksize)
 {
 	if ((ksize <= MAX_KSIZE) && (ksize >= MIN_KSIZE))
 	{
 		ksize_ = ksize;
-	} /* (ksize <= MAX_KSIZE) && (ksize >= MIN_KSIZE) */
+	} /* (ksize <= MAX_KSIZE) && (ksize >= MIN_KSIZE) */	
 	else
 	{
 		std::cout << KSIZE_INVALID_RANGE << std::endl;
 	}
 }
 
-int Corners::get_ksize() const
+int CornerDetector::getKsize(void) const
 {
 	return ksize_;
+}
+
+cv::Mat detectCorners(cv::Mat img)
+{
+	cv::Mat img_gray;
+	cv::cvtcolor(img,img_gray,cv::COLOR_BGR2GRAY);
+	
+	cv::Mat img_resized;
+	cv::resize(img_gray, img_resized, Size(), scale_, scale_, CV_INTER_CUBIC);
+	cv::Mat img_filtered;
+	cv::medianBlur(img_resized, img_filtered, ksize_);
+	cv::Mat img_corners;
+	cv::cornerHarris(img_filtered, img_corners, HARRIS_BLOCK_SIZE, HARRIS_K_SIZE, HARRIS_K, BORDER_DEFAULT);
 }
