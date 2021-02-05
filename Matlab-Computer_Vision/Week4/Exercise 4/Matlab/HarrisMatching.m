@@ -77,9 +77,12 @@ end
 % matches (i.e not ascending order as with SSD).
 
 %%-your-code-starts-here-%%
-% Compute the sum of squared differences (SSD) of pixels' intensities
+
+% Compute the Normalized Cross-Correlation (NCC) of pixels' intensities
 % for all pairs of patches from the two images
 NormalizedCrossCorrelation=zeros(n,m);
+
+% Calculate mean of each element along the patches
 meanA = mean(patchA,3);
 meanB = mean(patchB,3);
 for i=1:n
