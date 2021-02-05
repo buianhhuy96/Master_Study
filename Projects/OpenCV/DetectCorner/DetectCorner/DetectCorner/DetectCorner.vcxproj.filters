@@ -18,5 +18,13 @@
     <ClCompile Include="DetectCorner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CornerDetector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CornerDetector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

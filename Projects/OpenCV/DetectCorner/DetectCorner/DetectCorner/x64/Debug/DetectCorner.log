@@ -1,2 +1,4 @@
-﻿  DetectCorner.cpp
+﻿  CornerDetector.cpp
+D:\TUT\Git\Personal-study\Projects\OpenCV\DetectCorner\DetectCorner\DetectCorner\CornerDetector.h(16,27): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+D:\TUT\Git\Personal-study\Projects\OpenCV\DetectCorner\DetectCorner\DetectCorner\CornerDetector.cpp(33,12): warning C4244: '=': conversion from 'const float' to 'int', possible loss of data
   DetectCorner.vcxproj -> D:\TUT\Git\Personal-study\Projects\OpenCV\DetectCorner\DetectCorner\x64\Debug\DetectCorner.exe

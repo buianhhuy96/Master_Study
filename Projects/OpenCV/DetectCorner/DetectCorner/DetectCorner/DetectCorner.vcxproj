@@ -151,7 +151,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CornerDetector.cpp" />
     <ClCompile Include="DetectCorner.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CornerDetector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
